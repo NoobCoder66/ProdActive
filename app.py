@@ -1,20 +1,19 @@
 import hashlib
-import mysql.connector
+# import mysql.connector
 from flask import Flask, request, redirect, url_for, render_template, session, jsonify
 from decimal import Decimal
 from datetime import datetime
 
-# app = Flask(__name__, template_folder='../html', static_folder='../html/static')
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # Database connection setup
-db_config = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "ebdb"
-}
+# db_config = {
+#     "host": "localhost",
+#     "user": "root",
+#     "password": "",
+#     "database": "ebdb"
+# }
 
 # First page to show
 @app.route('/')
