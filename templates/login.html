@@ -13,7 +13,7 @@
         </div>
         <div class="right-section">
             <h1>Sign In</h1>
-            <form action="http://localhost:5000/login" method="post">
+            <form action="{{ url_for('login') }}" method="post">
                 <input type="text" name="username" id = "username" placeholder="Username" required autofocus="">
                 <input type="password" name="password" id = "password" placeholder="Password" required="">
                 <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>

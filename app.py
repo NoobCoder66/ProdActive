@@ -4,7 +4,8 @@ from flask import Flask, request, redirect, url_for, render_template, session, j
 from decimal import Decimal
 from datetime import datetime
 
-app = Flask(__name__, template_folder='../html', static_folder='../html/static')
+# app = Flask(__name__, template_folder='../html', static_folder='../html/static')
+app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # Database connection setup
@@ -250,6 +251,16 @@ def inventory_page():
 
             products = cursor.fetchall()
 
+            # Add stock status for each product
+            for product in products:
+                stock = product['stock']
+                if stock <= 15:
+                    product['status'] = 'Low Stock'
+                elif stock >= 30:
+                    product['status'] = 'Over Stock'
+                else:
+                    product['status'] = 'Normal'
+
             cursor.close()
             connection.close()
 
@@ -279,6 +290,16 @@ def inventory_emp():
                 cursor.execute(query)
 
             products = cursor.fetchall()
+
+            # Add stock status for each product
+            for product in products:
+                stock = product['stock']
+                if stock <= 15:
+                    product['status'] = 'Low Stock'
+                elif stock >= 50:
+                    product['status'] = 'Over Stock'
+                else:
+                    product['status'] = 'Normal'
 
             cursor.close()
             connection.close()
@@ -544,6 +565,13 @@ def customer_emp():
         session['customer_name'] = request.form['customer']
         session['email'] = request.form['email']
         session['contacts'] = request.form['contacts']
+        session['age'] = request.form.get('age') or None
+        session['birthdate'] = request.form.get('birthdate') or None
+        session['sex'] = request.form.get('sex') or None
+        session['tel_no'] = request.form.get('tel_no') or None
+        session['street'] = request.form.get('street') or None
+        session['city'] = request.form.get('city') or None
+        session['zip'] = request.form.get('zip') or None
 
         return redirect(url_for('order_emp'))
     
@@ -558,47 +586,70 @@ def order_emp():
         data = request.get_json()
         print("Recieved order data", data)
 
-        if not data:
+        if not data or len(data) == 0:
             return jsonify({"error": "Invalid data"}), 400
 
-        if 'order_list' not in session:
-            session['order_list'] = []
+        if request.method == 'POST':
+            data = request.get_json()
+            print("Received order data", data)
 
-        for item in data:
-            prod_id = item['prod_id']
-            quantity = int(item['quantity'])
+            if not data or len(data) == 0:
+                return jsonify({"error": "Invalid data"}), 400
 
-            cursor.execute("SELECT * FROM prod WHERE prod_id = %s", (prod_id,))
-            product = cursor.fetchone()
+            # Initialize if not already
+            if 'order_list' not in session:
+                session['order_list'] = []
 
-            if product:
-                total_price = float(product['price']) * quantity
+            # Build a lookup map of existing items
+            existing_items = {item['prod_id']: item for item in session['order_list']}
 
-                existing_product = next((p for p in session['order_list'] if p['prod_id'] == prod_id), None)
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor(dictionary=True)
 
-                if existing_product:
-                    existing_product['quantity'] += quantity
-                    existing_product['total_price'] += total_price
+            for item in data:
+                prod_id = item['prod_id']
+                quantity = int(item['quantity'])
+
+                cursor.execute("SELECT * FROM prod WHERE prod_id = %s", (prod_id,))
+                product = cursor.fetchone()
+                if not product:
+                    continue
+
+                if product['stock'] <= 0:
+                    return jsonify({"error": f"{product['prod_name']} is out of stock."}), 400
+                if quantity > product['stock']:
+                    return jsonify({"error": f"Only {product['stock']} item(s) of {product['prod_name']} available."}), 400
+
+                if prod_id in existing_items:
+                    # Update quantity and total
+                    existing_items[prod_id]['quantity'] += quantity
+                    existing_items[prod_id]['total_price'] = existing_items[prod_id]['quantity'] * existing_items[prod_id]['unit_price']
                 else:
-                    session['order_list'].append({
+                    # Add new item
+                    existing_items[prod_id] = {
                         'prod_id': prod_id,
                         'prod_name': product['prod_name'],
                         'quantity': quantity,
                         'unit_price': float(product['price']),
-                        'total_price': total_price
-                    })
+                        'total_price': float(product['price']) * quantity
+                    }
 
-        session['order_total'] = sum(item['total_price'] for item in session['order_list'])
+            session['order_list'] = list(existing_items.values())
+            session['order_total'] = sum(item['total_price'] for item in session['order_list'])
+
+            cursor.close()
+            connection.close()
+
+            return jsonify({"message": "Order received", "redirect": "/checkout_page"})
+    else:
+        if 'order_list' not in session:
+            session['order_list'] = []
+
+        cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
+        products = cursor.fetchall()
         cursor.close()
         connection.close()
-
-        return jsonify({"message": "Order received", "redirect": "/checkout_emp"})
-
-    cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
-    products = cursor.fetchall()
-    cursor.close()
-    connection.close()
-    return render_template('emp_purchase.html', products=products)
+        return render_template('emp_purchase.html', products=products)
 
 @app.route('/checkout_emp')
 def checkout_emp():
@@ -612,8 +663,20 @@ def submit_checkout_emp():
     email = request.form.get('email')
     contacts = request.form.get('contacts')
     total_amount = request.form.get('total_amount')
+    payment_amount = float(request.form.get('payment', 0))
+    change_amount = float(request.form.get('change', 0))
+    age = request.form.get('age')
+    birthdate = request.form.get('birthdate')
+    sex = request.form.get('sex')
+    tel_no = request.form.get('tel_no')
+    street = request.form.get('street')
+    city = request.form.get('city')
+    zip_code = request.form.get('zip')
 
     prod_ids = request.form.getlist('prod_id')
+    if not prod_ids:
+        return "Cannot checkout with an empty table.", 400
+    
     quantities = request.form.getlist('quantity')
     unit_prices = request.form.getlist('unit_price')
 
@@ -622,17 +685,19 @@ def submit_checkout_emp():
 
     try:
         insert_customer = """
-            INSERT INTO customer (customer_name, email, contacts)
-            VALUES (%s, %s, %s)
+            INSERT INTO customer 
+            (customer_name, email, contacts, age, birthdate, sex, tel_no, street, city, zip)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(insert_customer, (customer_name, email, contacts))
+        cursor.execute(insert_customer, (customer_name, email, contacts, age, birthdate, sex,
+            tel_no, street, city, zip_code))
         customer_id = cursor.lastrowid
 
         insert_order = """
-            INSERT INTO orders (customer_id, order_date, total_amount)
-            VALUES (%s, NOW(), %s)
+            INSERT INTO orders (customer_id, order_date, total_amount, payment_amount, change_amount)
+            VALUES (%s, NOW(), %s, %s, %s)
         """
-        cursor.execute(insert_order, (customer_id, total_amount))
+        cursor.execute(insert_order, (customer_id, total_amount, payment_amount, change_amount))
         order_id = cursor.lastrowid
 
         for i in range(len(prod_ids)):
@@ -656,6 +721,7 @@ def submit_checkout_emp():
 
         connection.commit()
         session['latest_order_id'] = order_id
+        session.pop('order_list', None)
         return redirect(url_for('receipt_emp'))
 
     except Exception as e:
@@ -675,16 +741,23 @@ def receipt_emp():
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
-    # Get order info
     cursor.execute("""
-        SELECT o.order_id, o.order_date, o.total_amount, c.customer_name, c.email, c.contacts
+        SELECT o.order_id, o.order_date, o.total_amount, o.payment_amount, o.change_amount,
+           c.customer_name, c.email, c.contacts
         FROM orders o
         JOIN customer c ON o.customer_id = c.customer_id
         WHERE o.order_id = %s
     """, (order_id,))
     order_info = cursor.fetchone()
 
-    # Get item details
+    vat_rate = 0.12
+    total_amount = float(order_info['total_amount'])
+    vatable_sales = round(total_amount / (1 + vat_rate), 2)
+    vat_amount = round(total_amount - vatable_sales, 2)
+
+    order_info['vatable_sales'] = vatable_sales
+    order_info['vat_amount'] = vat_amount
+
     cursor.execute("""
         SELECT p.prod_name, ch.quantity, ch.unit_price, ch.total_price
         FROM checkout ch
@@ -696,7 +769,7 @@ def receipt_emp():
     cursor.close()
     connection.close()
 
-    return render_template('receipt_emp.html', order=order_info, items=items)
+    return render_template('emp_receipt.html', order=order_info, items=items)
 
 # Maintenance page from Admin panel
 @app.route('/maintenance')
