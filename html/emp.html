@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Employee-eboutique</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/admin.css') }}">
+    </head>
+    <body>
+        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" style="height: 40px; margin-left: 10px;" alt="Employee Icon" title="Employee">
+                <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
+            </div>
+            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('inventory_emp') }}" class="nav-link">Inventory</a></li>
+                        <li><a href="{{ url_for('sales_emp') }}" class="nav-link">Transaction</a></li>
+                        <li><a href="{{ url_for('help_emp') }}" class="nav-link">Help</a></li>
+                        <li><a href="{{ url_for('about_emp') }}" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 style="color: #0094FF; font-size: 3rem;">Welcome Back!</h1>
+                <h2 style="font-size: 2rem;">{{ session['username'] }}</h2>
+            </main>
+        </div>
+        <script>
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }
+        </script>
+    </body>
+</html>

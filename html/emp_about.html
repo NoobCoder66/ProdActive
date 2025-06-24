@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About-eBoutique</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='cstry/about.css') }}">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" alt="Admin Icon" title="Admin">
+            <h2>{{ session['username'] }}</h2>
+        </div>
+        <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="Logo">
+    </header>
+    <div class="layout">
+        <aside class="sidebar">
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('inventory_emp') }}" class="nav-link">Inventory</a></li>
+                    <li><a href="{{ url_for('sales_emp') }}" class="nav-link">Transaction</a></li>
+                    <li><a href="{{ url_for('help_emp') }}" class="nav-link">Help</a></li>
+                    <li><a href="{{ url_for('about_emp') }}" class="nav-link active">About</a></li>
+                    <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                </ul>
+            </nav>
+        </aside>
+        <div class="scrollable-main">
+            <main class="main-content">
+                <div class="team-section">
+                    <h2 class="section-title">Meet the Developers</h2>
+                    <div class="team-container">
+                        <div class="developer-card">
+                            <img src="https://placehold.co/150x150/069ff7/FFF?text=CJ" alt="Christian Joshua A. Lacerna">
+                            <h3>LACERNA, CHRISTIAN JOSHUA A.</h3>
+                            <p><a href="mailto:qcjlacerna@tip.edu.ph">qcjlacerna@tip.edu.ph</a></p>
+                        </div>
+                        <div class="developer-card">
+                            <img src="https://placehold.co/150x150/069ff7/FFF?text=AO" alt="Adrian O. Tabiolo">
+                            <h3>TABIOLO, ADRIAN O.</h3>
+                            <p><a href="mailto:qaotabiolo@tip.edu.ph">qaotabiolo@tip.edu.ph</a></p>
+                        </div>
+                        <div class="developer-card">
+                            <img src="https://placehold.co/150x150/069ff7/FFF?text=MJ" alt="Mark John V. Jomoc">
+                            <h3>JOMOC, MARK JOHN V.</h3>
+                            <p><a href="mailto:qmjjomoc01@tip.edu.ph">qmjjomoc01@tip.edu.ph</a></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-section">
+                    <h2 class="section-title">About ProdActive</h2>
+                    <p>
+                        Welcome to <strong>ProdActive</strong>, your all-in-one Point of Sale (POS) solution designed to streamline your business operations. ProdActive was born from a desire to empower small and medium-sized businesses with a tool that is not only powerful and efficient but also intuitive and easy to use. Our system simplifies inventory management, accelerates the transaction process, and provides insightful reports to help you make data-driven decisions.
+                    </p>
+                    <p>
+                        At its core, ProdActive is built to enhance productivity and activate your business's full potential. Whether you're managing a bustling retail store or a boutique shop, our system provides the reliability and features you need to succeed. With dedicated roles for Admins and Employees, secure login, and comprehensive modules for sales, inventory, and user management, ProdActive is the partner you need to grow your business.
+                    </p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function confirmLogout() {
+            if (confirm("Are you sure you want to log out?")) {
+                window.location.href = "{{ url_for('logout') }}";
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

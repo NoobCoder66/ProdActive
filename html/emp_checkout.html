@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Transaction-eboutique</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/checkout.css') }}">
+    </head>
+    <body>
+        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" style="height: 40px; margin-left: 10px;" alt="Employee Icon" title="Employee">
+                <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
+            </div>
+            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('inventory_emp') }}" class="nav-link">Inventory</a></li>
+                        <li><a href="{{ url_for('sales_emp') }}" class="nav-link active">Transaction</a></li>
+                        <li><a href="{{ url_for('help_emp') }}" class="nav-link">Help</a></li>
+                        <li><a href="{{ url_for('about_emp') }}" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main class="main-content">
+                <form class="checkout-content" id="checkoutUI" action="{{ url_for('submit_checkout_emp') }}" method="POST">
+                    <input type="hidden" name="customer_name" value="{{ session['customer_name'] }}">
+                    <input type="hidden" name="email" value="{{ session['email'] }}">
+                    <input type="hidden" name="contacts" value="{{ session['contacts'] }}">
+                    <input type="hidden" name="age" value="{{ session['age'] }}">
+                    <input type="hidden" name="birthdate" value="{{ session['birthdate'] }}">
+                    <input type="hidden" name="sex" value="{{ session['sex'] }}">
+                    <input type="hidden" name="tel_no" value="{{ session['tel_no'] }}">
+                    <input type="hidden" name="street" value="{{ session['street'] }}">
+                    <input type="hidden" name="city" value="{{ session['city'] }}">
+                    <input type="hidden" name="zip" value="{{ session['zip'] }}">
+                    <input type="hidden" id="totalAmount" value="{{ total_cash_payment }}">
+                    <div class="table-container">
+                        <table border="1" id="checkoutTable">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Product Name</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_list %}
+                                <tr>
+                                    <td><input type="hidden" name="prod_id" value="{{ item['prod_id'] }}">{{ item['prod_id'] }}</td>
+                                    <td>{{ item['prod_name'] }}</td>
+                                    <td><input type="hidden" name="quantity" value="{{ item['quantity'] }}">{{ item['quantity'] }}</td>
+                                    <td><input type="hidden" name="unit_price" value="{{ item['unit_price'] }}">₱{{ "{:,.2f}".format(item['unit_price']) }}</td>
+                                    <td>₱{{ "{:,.2f}".format(item['quantity'] * item['unit_price']) }}</td>
+                                    <td>
+                                        <button type="button" onclick="removeRow(this)" title="Remove item" style="border: none; background: none; cursor: pointer;">
+                                            🗑️
+                                        </button>
+                                    </td>                                
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="payment-info">
+                        <label id="totalLabel">Total Cash Payment: </strong>₱{{ "{:,.2f}".format(total_cash_payment) }}</label>
+                        <input type="hidden" name="total_amount" value="{{ total_cash_payment }}">
+                    </div>
+                    <div>
+                        <label for="payment">Customer Payment (₱):</label>
+                        <input type="number" step="0.01" name="payment" id="payment" required oninput="calculateChange()">
+                    </div>
+                    <div>
+                        <label>Change (₱):</label>
+                        <span id="changeDisplay">₱0.00</span>
+                    </div>
+                    <input type="hidden" name="change" id="change">
+                    <div class="form-buttons">
+                        <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
+                        <button type="submit" class="btn Done" disabled>Done</button>
+                    </div>
+                </form>
+            </main>
+        </div>
+        <script>
+            function removeRow(button) {
+                if (!confirm("Are you sure you want to remove this item?")) {
+                    return
+                }
+
+
+                const row = button.closest('tr');
+                const prodId = row.querySelector('input[name="prod_id"]').value;
+
+                fetch(`/remove_checkout_item/${prodId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.remove();
+                        recalculateTotal();
+                    } else {
+                        alert("Failed to remove item.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error removing item:", error);
+                });
+            }
+
+            function updateCheckoutState() {
+                const total = parseFloat(document.getElementById('totalAmount').value);
+                const doneButton = document.querySelector('.btn.Done');
+                const isOrderEmpty = document.querySelectorAll('#checkoutTable tbody tr').length === 0;
+
+                if (isNaN(total) || total <= 0 || isOrderEmpty) {
+                    doneButton.disabled = true;
+                    doneButton.title = "Cannot submit an empty order.";
+                } else {
+                    doneButton.disabled = false;
+                    doneButton.title = "";
+                }
+            }
+
+            function recalculateTotal() {
+                let total = 0;
+                const rows = document.querySelectorAll('#checkoutTable tbody tr');
+                rows.forEach(row => {
+                    const quantity = parseInt(row.querySelector('input[name="quantity"]').value) || 0;
+                    const unit_price = parseFloat(row.querySelector('input[name="unit_price"]').value) || 0;
+                    total += quantity * unit_price;
+                });
+                
+                const formattedTotal = total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('totalLabel').textContent = `Total Cash Payment: ₱${formattedTotal}`;
+                document.getElementById('totalAmount').value = total.toFixed(2);
+                document.querySelector('input[name="total_amount"]').value = total.toFixed(2);
+
+                calculateChange();
+                updateCheckoutState();
+            }
+
+            function calculateChange() {
+                const total = parseFloat(document.getElementById('totalAmount').value);
+                const payment = parseFloat(document.getElementById('payment').value) || 0;
+                const change = Math.max(0, payment - total);
+
+                const formattedChange = change.toLocaleString('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                document.getElementById('changeDisplay').textContent = formattedChange;
+                document.getElementById('change').value = change.toFixed(2);
+            }
+
+            window.onload = function () {
+                updateCheckoutState();
+            }
+
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }
+        </script>
+    </body>
+</html>

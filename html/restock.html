@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reports-eboutique</title>
+        <link rel="stylesheet" href="../css/search.css">
+    </head>
+    <body>
+        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <h2 style="color: black; margin-left: 10px;">Username</h2>
+            </div>
+            <img src="../images/logo3.png" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="register.html" class="nav-link">Registration</a></li>
+                        <li><a href="inventory.html" class="nav-link">Inventory</a></li>
+                        <li><a href="sales.html" class="nav-link">Transaction</a></li>
+                        <li><a href="maintenance.html" class="nav-link">Maintenance</a></li>
+                        <li><a href="report.html" class="nav-link active">Report</a></li>
+                        <li><a href="help.html" class="nav-link">Help</a></li>
+                        <li><a href="about.html" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main class="main-content" style="flex: 1; padding: 20px; background-color: #f9f9f9;">
+                <div class="inventory-content" id="inventoryUI">
+                    <input class="search-bar" type="text" placeholder="Search">
+                    <table>
+                        
+                    </table>
+                </div>
+            </main>
+        </div>
+        <script>
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }
+        </script>
+    </body>
+</html>

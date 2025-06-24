@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Receipt</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; margin: 0 auto; max-width: 72mm; padding: 10px; font-size: 11px; }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .section { margin: 10px 0; }
+        .line { display: flex; justify-content: space-between; }
+        .total { font-size: 13px; font-weight: bold; margin-top: 10px; }
+        hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
+        @media print {
+            body {
+                width: 72mm;
+                margin: 0;
+            }
+
+            .center, .line {
+                page-break-inside: avoid;
+            }
+
+            .btns {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <strong>T.H.E. ELECTRONICS BOUTIQUE INC.</strong><br>
+        UNIT B L022 LOWER GROUND FLR AYALA MALLS<br>
+        FAIRVIEW TERRACES PASONG PUTIK PROPER QC<br>
+        VAT REG TIN: 006-750-574-00021<br>
+        SN: CTC10169601 MIN: 22030311124693772
+    </div>
+    <div class="section">
+        <div class="line">
+            <span>Cashier:</span><span>#0001</span>
+        </div>
+        <div class="line">
+            <span>Date:</span><span>{{ order.order_date }}</span>
+        </div>
+        <div class="line">
+            <span>INVOICE #:</span><span>{{ order.order_id }}</span>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        {% for item in items %}
+            <div>{{ item.prod_name }}</div>
+            <div class="line">
+                <span>{{ item.quantity }} x ₱{{ "{:,.2f}".format(item.unit_price) }}</span>
+                <span>₱{{ "{:,.2f}".format(item.total_price) }}</span>
+            </div>
+        {% endfor %}
+        <hr>
+        <div class="line">
+            <span>Subtotal</span>
+            <span>₱{{ "{:,.2f}".format(order.total_amount) }}</span>
+        </div>
+        <div class="line">
+            <span>12% VAT</span>
+            <span>₱{{ "{:,.2f}".format(order.vat_amount) }}</span>
+        </div>
+        <div class="line">
+            <span>VATable Sales</span>
+            <span>₱{{ "{:,.2f}".format(order.vatable_sales) }}</span>
+        </div>
+        <div class="total line">
+            <span>Total</span>
+            <span>₱{{ "{:,.2f}".format(order.total_amount) }}</span>
+        </div>
+        <div class="line">
+            <span>Cash</span>
+            <span>₱{{ "{:,.2f}".format(order.payment_amount) }}</span>
+        </div>
+        <div class="line">
+            <span>Change</span>
+            <span>₱{{ "{:,.2f}".format(order.change_amount) }}</span>
+        </div>
+    </div>
+    
+    <hr>
+
+    <div class="section">
+        <div class="bold">BUYER DETAILS</div>
+        <div>Name: {{ order.customer_name }}</div>
+        <div>Email: {{ order.email }}</div>
+        <div>Contacts: {{ order.contacts }}</div>
+    </div>
+
+    <div class="section">
+        POS Provider: CHASE TECHNOLOGIES CORPORATION<br>
+        5263 Diesel St. Palanan, Makati City<br>
+        TIN: 202-086-098-000<br>
+        Accrd No.: 048202086098000014981<br>
+        Date Issued: 03/18/2005<br>
+        Valid Until: 07/31/2025<br>
+        PTU Number: FPD032022-028-0320337-00021<br>
+        PTU Date Issued: 03/08/2022
+    </div>
+
+    <hr>
+
+    <div class="center bold">
+        THIS INVOICE/RECEIPT SHALL BE VALID FOR<br>
+        FIVE (5) YEARS FROM THE DATE OF PERMIT TO USE.
+    </div>
+
+    <div class="center bold" style="margin-top: 10px;">
+        SALES INVOICE<br>
+        THANK YOU COME AGAIN
+    </div>
+
+    <div class="center" style="margin-top: 20px;">
+        <button onclick="window.print()">🖨️ Print</button>
+        <button onclick="downloadPDF()">⬇️ Download PDF</button>
+        <a href="{{ url_for('sales_emp') }}"><button>↩️ Back to Sales</button></a>
+    </div>
+
+    <!-- Download Function -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadPDF() {
+            const element = document.body;
+            const btns = document.querySelectorAll('.center button');
+            
+            btns.forEach(btn => btn.style.display = 'none');
+
+            setTimeout(() => {
+                html2pdf().set({
+                    margin: 0,
+                    filename: 'receipt.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: [80, 200], orientation: 'portrait' }
+                }).from(element).save().then(() => {
+                    btns.forEach(btn => btn.style.display = 'inline-block');
+                });
+            }, 100)
+        }
+    </script>
+</body>
+</html>

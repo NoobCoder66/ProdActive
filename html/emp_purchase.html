@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Transaction-eboutique</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/order.css') }}">
+    </head>
+    <body>
+        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" style="height: 40px; margin-left: 10px;" alt="Employee Icon" title="Employee">
+                <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
+            </div>
+            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('inventory_emp') }}" class="nav-link">Inventory</a></li>
+                        <li><a href="{{ url_for('sales_emp') }}" class="nav-link active">Transaction</a></li>
+                        <li><a href="{{ url_for('help_emp') }}" class="nav-link">Help</a></li>
+                        <li><a href="{{ url_for('about_emp') }}" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main class="main-content">
+                <form class="registration-form">
+                    <div class="top-form-row">
+                        <div class="form-inline-group">
+                            <label for="prod_name">Search Product:</label>
+                            <input type="text" id="prod_name" name="prod_name" list="productList" autocomplete="off" required>
+                            <datalist id="productList">
+                                {% for product in products %}
+                                    <option value="{{ product['prod_name'] }}">
+                                {% endfor %}
+                            </datalist>
+                            <input type="hidden" id="prod_id" name="prod_id">
+                        </div>
+
+                        <div class="form-inline-group">
+                            <label for="quantity">Quantity:</label>
+                            <input type="number" id="quantity" name="quantity" required>
+                        </div>
+                        <button type="button" class="btn Add" onclick="addItem()">Add</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table border="1" id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Name</th>
+                                    <th>Stock</th>
+                                    <th>Price</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr data-prod-id="{{ product.prod_id }}" data-prod-name="{{ product.prod_name }}">
+                                    <td>{{ product.prod_id }}</td>
+                                    <td>{{ product.prod_name }}</td>
+                                    <td >{{ product.stock }}</td>
+                                    <td>₱{{ "{:,.2f}".format(product.price) }}</td>
+                                    <td>{{ product.category }}</td>        
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-buttons-bottom">
+                        <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
+                        <button type="button" class="btn Done" id="done-btn">Done</button>
+                    </div>
+                </form>
+            </main>
+        </div>
+        <script>
+            let orderList = [];
+
+            document.getElementById("prod_name").addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+
+                    const visibleRows = Array.from(document.querySelectorAll("#productTable tbody tr"))
+                        .filter(row => row.style.display !== "none");
+
+                    if (visibleRows.length > 0) {
+                        selectProduct(visibleRows[0]);
+                    }
+                }
+            });
+
+            document.getElementById("prod_name").addEventListener("keyup", function () {
+                    let filter = this.value.toLowerCase();
+                    let rows = document.querySelectorAll("#productTable tbody tr");
+
+                    rows.forEach(row => {
+                        let text = row.innerText.toLowerCase();
+                        row.style.display = text.includes(filter) ? "" : "none";
+                    });
+                });
+                
+                function selectProduct(row) {
+                    const prodId = row.dataset.prodId;
+                    const prodName = row.dataset.prodName;
+
+                    document.getElementById("prod_name").value = prodName;
+                    document.getElementById("prod_id").value = prodId;
+                }
+                
+                document.querySelectorAll("#productTable tbody tr").forEach(row => {
+                    row.style.cursor = "pointer";
+                    row.addEventListener("click", function () {
+                        selectProduct(this);
+                    });
+                });
+
+            function addItem() {
+                let prodId = document.getElementById("prod_id").value;
+                let quantity = parseInt(document.getElementById("quantity").value);
+    
+                if (!prodId || !quantity || quantity <= 0) {
+                    alert("Please enter valid product details");
+                    return;
+                }
+
+                let selectedRow = Array.from(document.querySelectorAll("#productTable tbody tr"))
+                    .find(row => row.dataset.prodId === prodId);
+
+                if (!selectedRow) {
+                    alert("Product not found in the table.");
+                    return;
+                }
+
+                let stock = parseInt(selectedRow.cells[2].innerText);
+                
+                if (stock <= 0) {
+                    alert("Cannot add item. Stock is zero.");
+                    return;
+                }
+
+                if (quantity > stock) {
+                    alert(`Only ${stock} item(s) in stock.`);
+                    return;
+                }
+
+                orderList.push({ prod_id: prodId, quantity: quantity });
+                alert("Item added!");
+
+                document.getElementById("prod_name").value = "";
+                document.getElementById("prod_id").value = "";
+                document.getElementById("quantity").value = "";
+                document.getElementById("prod_name").focus();
+            }
+
+
+            document.getElementById("done-btn").addEventListener("click", function() {
+                if (orderList.length === 0) {
+        
+                    fetch("/check_existing_order")
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.exists) {
+                                window.location.href = "/checkout_page";
+                            } else {
+                                alert("No items in the order list.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error checking existing order:", err);
+                        });
+                    return;
+                }
+
+    
+                fetch("/order_emp", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(orderList)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.redirect) {
+                            orderList = [];
+                            window.location.href = data.redirect;
+                        } else {
+                            alert("Error processing order.");
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+            });
+
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }                        
+        </script>
+    </body>
+</html>

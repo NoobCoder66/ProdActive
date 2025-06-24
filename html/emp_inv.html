@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Inventory-eboutique</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/search.css') }}">
+    </head>
+    <body>
+        <header style="position: fixed; top: 0; left: 0; right: 0; background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" style="height: 40px; margin-left: 10px;" alt="Employee Icon" title="Employee">
+                <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
+            </div>
+            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px); width: 100%;">
+            <aside style="position: fixed; top: 60px; left: 0; background-color: #4A4A4A; width: 10%; height: calc(100vh - 60px); padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('inventory_emp') }}" class="nav-link active">Inventory</a></li>
+                        <li><a href="{{ url_for('sales_emp') }}" class="nav-link">Transaction</a></li>
+                        <li><a href="{{ url_for('help_emp') }}" class="nav-link">Help</a></li>
+                        <li><a href="{{ url_for('about_emp') }}" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main class="main-content" style="position: fixed; top: 60px; left: 13%; right: 0; bottom: 0; padding: 20px; background-color: #f9f9f9; overflow-y: auto; overflow-x: hidden;">
+                <div class="inventory-content" id="inventoryUI">
+                    <div class="search-container">
+                        <input class="search-bar" type="text" id="searchInput" placeholder="Search">
+                    </div>
+                    <div class="table-wrapper">
+                        <table border="1" id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Name</th>
+                                    <th>Stock</th>
+                                    <th>Price</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr title="{{ product.status }}">
+                                    <td>{{ product.prod_id }}</td>
+                                    <td>{{ product.prod_name }}</td>
+                                    <td >{{ product.stock }}</td>
+                                    <td>₱{{ "{:,.2f}".format(product.price) }}</td>
+                                    <td>{{ product.category }}</td>
+                                    <td class="{% if product.status == 'Low Stock' %}critical-stock{% elif product.status == 'Over Stock' %}over-stock{% endif %}">
+                                        {{ product.status }}
+                                    </td>        
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <script>
+            document.getElementById("searchInput").addEventListener("keyup", function() {
+                let filter = this.value.toLowerCase();
+                let rows = document.querySelectorAll("#productTable tbody tr");
+
+                rows.forEach(row => {
+                    let text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(filter) ? "" : "none";
+                });
+            });
+            
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }
+        </script>
+    </body>
+</html>

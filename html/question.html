@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login-eboutique</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='cstry/question.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <img src="{{ url_for('static', filename='imtry/logo2.png') }}" alt="logo" class="logo">
+        </div>
+        <div class="right-section">
+            <h1>Security Questions</h1>
+            <form action="{{ url_for('verify_security_questions') }}" method="post">
+                <label>What's the main theme color of the company?</label>
+                <input type="text" name="answer1" required autofocus="">
+                <label>What type of phones do the company only sell?</label>
+                <input type="text" name="answer2" required ="">
+                <input type="hidden" name="username" value="{{ request.args.get('username') }}">
+                <div class="button-container">
+                    <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
+                    <button class="btn" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

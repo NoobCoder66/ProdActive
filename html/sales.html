@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Transaction-eboutique</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/option2.css') }}">
+    </head>
+    <body>
+        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
+                <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
+            </div>
+            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
+        </header>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="{{ url_for('register_page') }}" class="nav-link">Registration</a></li>
+                        <li><a href="{{ url_for('inventory_page') }}" class="nav-link">Inventory</a></li>
+                        <li><a href="{{ url_for('sales_page') }}" class="nav-link active">Transaction</a></li>
+                        <li><a href="{{ url_for('maintenance_page') }}" class="nav-link">Maintenance</a></li>
+                        <li><a href="{{ url_for('report_page') }}" class="nav-link">Report</a></li>
+                        <li><a href="{{ url_for('help_page') }}" class="nav-link">Help</a></li>
+                        <li><a href="{{ url_for('about_page') }}" class="nav-link">About</a></li>
+                        <a href="#" class="nav-link" onclick="return confirmLogout()">Log out</a>
+                    </ul>
+                </nav>      
+            </aside>
+            <main class="main-content">
+                <button class="reg-btn" onclick="location.href='/customer_page'">
+                    <img src="{{ url_for('static', filename='imtry/order.png') }}" alt="Order Icon" class="btn-icon">
+                    <span>Add Order</span>
+                </button>
+            </main>
+        </div>
+        <script>
+            function confirmLogout() {
+                if (confirm("Are you sure you want to log out?")) {
+                    window.location.href = "{{ url_for('logout') }}";
+                }
+                return false;
+            }
+        </script>
+    </body>
+</html>
