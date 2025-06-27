@@ -3,8 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Maintenance-eboutique</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/search.css') }}">
+        <title>Maintenance-ProdActive</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='cstry/edit.css') }}">
     </head>
     <body>
         <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
@@ -12,7 +12,6 @@
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
             <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
@@ -33,6 +32,12 @@
                 <div class="inventory-content" id="inventoryUI">
                     <div class="search-container">
                         <input class="search-bar" type="text" id="searchInput" placeholder="Search">
+                        <div class="action-buttons">
+                            <button class="edit-btn">Edit</button>
+                            <div class="image-container">
+                                <img src="{{ url_for('static', filename='imtry/delete.png') }}" alt="DELETE ICON" class="delete-icon" title="DELETE Product" id="delete-btn" style="cursor: pointer; width: 32px;">
+                            </div>
+                        </div>
                     </div>
                     <div class="table-wrapper">
                         <table border="1" id="productTable">
@@ -42,6 +47,11 @@
                                     <th>Name</th>
                                     <th>Role</th>
                                     <th>Username</th>
+                                    <th>Sex</th>
+                                    <th>Email</th>
+                                    <th>Address</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -50,7 +60,12 @@
                                     <td>{{ user.user_id }}</td>
                                     <td>{{ user.full_name }}</td>
                                     <td>{{ user.role }}</td>
-                                    <td>{{ user.username }}</td>      
+                                    <td>{{ user.username }}</td>
+                                    <td>{{user.sex}}</td>
+                                    <td>{{user.email}}</td>
+                                    <td>{{user.address}}</td>
+                                    <td>{{user.age}}</td>
+                                    <td>{{user.status}}</td>      
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -62,6 +77,97 @@
                 </div>
             </main>
         </div>
+        <div id="editEmpModal" class="modal1" style="display:none;">
+            <div class="modal-content1" style="width: 400px;">
+                <div class="modal-header1" style="background: #03a9f4; color: #fff; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0;">Edit Employee</h2>
+                    <span class="close" id="closeEditEmpModal" style="font-size: 1.5em; cursor: pointer;">&times;</span>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <form id="editEmpForm" action = "{{url_for('employee_update')}}" method="POST">
+                        <div class="form-group1" style="margin-bottom: 14px;">
+                            <label for="edit_user_id">User ID</label>
+                            <input type="text" id="edit_user_id" name="user_id" required style="width:100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_firstName">First Name</label>
+                            <input type="text" id="edit_firstName" name="firstName" style="width: 100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_lastName">Last Name</label>
+                            <input type="text" id="edit_lastName" name="lastName" style="width: 100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_email">Email</label>
+                            <input type="email" id="edit_email" name="email" style="width: 100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_address">Address</label>
+                            <input type="text" id="edit_address" name="address" style="width: 100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_sex">Sex</label>
+                            <select id="edit_sex" name="sex" style="width: 100%;">
+                                <option value="">Select Sex</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_birthday">Birthday</label>
+                            <input type="date" id="edit_birthday" name="birthday" style="width: 100%;">
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_status">Status</label>
+                            <select id="edit_status" name="status" style="width: 100%;">
+                                <option value="">Select Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 10px;">
+                            <label for="edit_role">Role</label>
+                            <select id="edit_role" name="role" style="width: 100%;">
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="employee">Employee</option>
+                            </select>
+                        </div>
+                        <div class="form-group1" style="margin-bottom: 14px;">
+                            <label for="edit_username">Username</label>
+                            <input type="text" id="edit_username" name="username" style="width: 100%;">
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="submit" class="btn btn-primary1" style="background: #03a9f4; color: #fff; border: none; border-radius: 6px; padding: 8px 24px; font-weight: 600;">EDIT</button>
+                            <button type="button" class="btn btn-secondary1" id="cancelEditEmp" style="background: #757575; color: #fff; border: none; border-radius: 6px; padding: 8px 24px; font-weight: 600;">BACK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteEmpModal" class="modal1" style="display:none;">
+            <div class="modal-content1" style="width: 350px;">
+                <div class="modal-header1" style="background: #f44336; color: #fff; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0;">Delete Employee</h2>
+                    <span class="close" id="closeDeleteEmpModal" style="font-size: 1.5em; cursor: pointer;">&times;</span>
+                </div>
+                <form id="deleteEmpForm" action="{{ url_for('Employee_delete') }}" method="POST">
+                    <div class="modal-body1" style="padding: 24px;">
+                        <p>Are you sure you want to delete this employee?</p>
+                        <label for="delete_id">ID:</label>
+                        <input type="text" id="delete_id" name="deleteEmp_id" required style="width:100%;" readonly>
+                        <label for="delete_name">Name:</label>
+                        <input type="text" id="delete_name" name="Name" required style="width:100%;" readonly>
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px;">
+                            <button type="button" class="btn btn-secondary1" id="cancelDeleteEmp">Cancel</button>
+                            <button type="submit" class="btn btn-primary1" id="confirmDeleteEmp" style="background: #f44336;">Delete</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
         <script>
             document.getElementById("searchInput").addEventListener("keyup", function() {
                 let filter = this.value.toLowerCase();
@@ -71,6 +177,86 @@
                     let text = row.innerText.toLowerCase();
                     row.style.display = text.includes(filter) ? "" : "none";
                 });
+            });
+
+            let selectedRow = null;
+
+            document.querySelectorAll('#productTable tbody tr').forEach(row => {
+                row.addEventListener('click', function() {
+                    document.querySelectorAll('#productTable tbody tr').forEach(r => r.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedRow = this;
+                });
+            });
+
+            document.querySelector('.edit-btn').addEventListener('click', function () {
+                if (!selectedRow) {
+                    alert('Please select a row to edit.');
+                    return;
+                }
+                const cells = selectedRow.getElementsByTagName('td');
+                document.getElementById('edit_user_id').value = cells[0].textContent;
+                
+                const fullName = cells[1].textContent.trim();
+                const nameParts = fullName.split(' ');
+                document.getElementById('edit_firstName').value = nameParts[0] || '';
+                document.getElementById('edit_lastName').value = nameParts.slice(1).join(' ') || '';
+
+                document.getElementById('edit_role').value = cells[2].textContent;
+                document.getElementById('edit_username').value = cells[3].textContent;
+                document.getElementById('edit_sex').value = cells[4].textContent;
+                document.getElementById('edit_email').value = cells[5].textContent;
+                document.getElementById('edit_address').value = cells[6].textContent;
+                document.getElementById('edit_status').value = cells[8].textContent;
+                document.getElementById('editEmpModal').style.display = 'flex';
+            });
+
+            document.getElementById('closeEditEmpModal').onclick = function () {
+                document.getElementById('editEmpModal').style.display = 'none';
+            };
+            document.getElementById('cancelEditEmp').onclick = function () {
+                document.getElementById('editEmpModal').style.display = 'none';
+            };
+
+            window.onclick = function(event) {
+                const modal = document.getElementById('editEmpModal');
+                if (event.target === modal) {
+                    modal.style.display = "none";
+                }
+            };
+
+            document.getElementById('editEmpForm').addEventListener('submit', function (e) {
+                if (!this.checkValidity()) {
+                    this.reportValidity();
+                    e.preventDefault();
+                    return;
+                }
+            });
+
+            document.getElementById('delete-btn').addEventListener('click', function () {
+                if (!selectedRow) {
+                    alert('Please select a row to delete.');
+                    return;
+                }
+                const deletecells = selectedRow.getElementsByTagName('td');
+                document.getElementById('delete_id').value = deletecells[0].textContent;
+                document.getElementById('delete_name').value = deletecells[1].textContent;
+                document.getElementById('deleteEmpModal').style.display = 'flex';
+            });
+
+            document.getElementById('closeDeleteEmpModal').onclick = function () {
+                document.getElementById('deleteEmpModal').style.display = 'none';
+            };
+
+            document.getElementById('cancelDeleteEmp').onclick = function () {
+                document.getElementById('deleteEmpModal').style.display = 'none';
+            };
+
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('deleteEmpModal');
+                if (event.target === modal) {
+                    modal.style.display = "none";
+                }
             });
             
             function confirmLogout() {

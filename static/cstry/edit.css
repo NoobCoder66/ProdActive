@@ -188,11 +188,14 @@ tr:hover {
 .modal-header {
     background-color: #069ff7;
     color: white;
-    padding: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    /* padding: 10px;
     border-radius: 10px 10px 0 0;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: center; */
 }
 
 .modal-header h2 {
@@ -214,7 +217,8 @@ tr:hover {
 
 .modal-body {
     padding: 20px;
-  
+    overflow-y: auto;
+    max-height: 60vh;
 }
 
 @media (max-width: 400px) {
@@ -363,7 +367,7 @@ tr:hover {
 }
 
 .form-group1 {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .delete-label {
@@ -475,9 +479,11 @@ tr:hover {
     background: #fff;
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    width: 600px;
-    max-width: 95vw;
+    width: 400px;
+    max-height: 80vh;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     font-family: 'Poppins', Arial, sans-serif;
     margin: 40px auto;
 }
@@ -506,7 +512,9 @@ tr:hover {
     color: #e53935;
 }
 .modal-body1 {
-    padding: 24px;
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 60vh;
 }
 .form-group1 {
     margin-bottom: 16px;
@@ -564,7 +572,7 @@ input[readonly] {
     background: #616161;
 }
 .btn-primary_emp{
-     background: #2036fd;
+    background: #2036fd;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -572,4 +580,13 @@ input[readonly] {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
+}
+.btn-primary1,
+.btn-secondary1,
+.btn-primary_emp {
+    margin-top: 20px;
+    font-size: 0.85rem;
+    padding: 3px 5px;         
+    border-radius: 4px;        
+    min-width: auto;           
 }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Maintenance-eboutique</title>
+        <title>Maintenance-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/search.css') }}">
     </head>
     <body>
@@ -12,7 +12,6 @@
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
             <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
@@ -34,6 +33,9 @@
                     <div class="search-container">
                         <input class="search-bar" type="text" id="searchInput" placeholder="Search">
                     </div>
+                    <div class="action-buttons">
+                        <button class="add-btn">ADD</button>
+                    </div>
                     <div class="table-wrapper">
                         <table border="1" id="productTable">
                             <thead>
@@ -42,15 +44,25 @@
                                     <th>Name</th>
                                     <th>Role</th>
                                     <th>Username</th>
+                                    <th>Address</th>
+                                    <th>Email</th>
+                                    <th>Sex</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for user in users %}
-                                <tr>
+                                <tr onclick="selectRow(this)">
                                     <td>{{ user.user_id }}</td>
                                     <td>{{ user.full_name }}</td>
                                     <td>{{ user.role }}</td>
-                                    <td>{{ user.username }}</td>      
+                                    <td>{{ user.username }}</td>
+                                    <td>{{user.address}}</td> 
+                                    <td>{{user.email}}</td>
+                                    <td>{{user.sex}}</td>
+                                    <td>{{user.age}}</td>
+                                    <td>{{user.status}}</td>      
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -62,6 +74,55 @@
                 </div>
             </main>
         </div>
+        <!--Add Employee Form-->
+        <div id="EmpModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Information</h2>
+                    <span class="close" id="closeModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="EmpForm" action = "{{url_for('add_details')}}" method = "POST">
+                        <div class="form-group">
+                            <label for="EmpUser_id">User ID</label>
+                            <input type="text" id="EmpUser" name="EmpUser" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="EmpAddress">Address</label>
+                            <input type="text" id="EmpAddress" name="EmpAddress" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="EmpEmail">Email:</label>
+                            <input type="email" id="EmpEmail" name="EmpEmail" required >
+                        </div>
+                        <div class="form-group">
+                            <label for="EmpAge">Age:</label>
+                            <input type="date" id="EmpAge" name="EmpAge" min="0"   >
+                        </div>
+                        <div class="form-group">
+                             <label for="EmpSex">Sex:</label>
+                           <select id="EmpSex" name="EmpSex" required>
+                                <option value="">Select Sex</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>    
+                        <div class="form-group">
+                            <label for="EmpStatus">Status:</label>
+                           <select id="EmpStatus" name="EmpStatus" required>
+                                <option value="">Select Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-primary_emp" id="AddEmployee">Add</button>
+                </div>
+            </div>
+        </div>
         <script>
             document.getElementById("searchInput").addEventListener("keyup", function() {
                 let filter = this.value.toLowerCase();
@@ -71,6 +132,50 @@
                     let text = row.innerText.toLowerCase();
                     row.style.display = text.includes(filter) ? "" : "none";
                 });
+            });
+
+            let selectedRow = null;
+            const rows = document.querySelectorAll("#productTable tbody tr");
+            const addBtn = document.querySelector(".add-btn");
+            rows.forEach(row => {
+                row.addEventListener("click", function() {
+                    rows.forEach(r => r.classList.remove("selected"));
+                    this.classList.add("selected");
+                    selectedRow = this;
+                });
+            });
+
+            addBtn.addEventListener("click", function() {
+                if(!selectedRow) {
+                    alert("Please select a row to add employee details.");
+                    return;
+                }
+                document.querySelector('.add-btn').onclick = function() {
+                    const cells = selectedRow.getElementsByTagName('td');
+                    document.getElementById("EmpUser").value = cells[0].textContent;
+                    document.getElementById("EmpModal").style.display = "flex";
+                };
+            });
+
+            document.getElementById("closeModal").onclick = function() {
+                document.getElementById("EmpModal").style.display = "none";
+            };
+
+            window.onclick = function(event) {
+                const modal = document.getElementById("EmpModal");
+                if (event.target === modal) {
+                    modal.style.display = "none";
+                }
+            };
+
+            document.getElementById("AddEmployee").addEventListener("click", function() {
+                const form1 = document.getElementById("EmpForm");
+                if (!form1.checkValidity()) {
+                    form1.reportValidity();
+                    return;
+                }
+                form1.submit();
+                document.getElementById("EmpModal").reset();
             });
             
             function confirmLogout() {

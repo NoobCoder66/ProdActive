@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - eBoutique</title>
+    <title>About - ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/about.css') }}">
 </head>
 <body>
@@ -12,7 +12,6 @@
             <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="Admin Icon" title="Admin">
             <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
         </div>
-        <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="Logo">
     </header>
     <div class="layout">
         <aside class="sidebar">
@@ -35,17 +34,17 @@
                     <h2 class="section-title">Meet the Developers</h2>
                     <div class="team-container">
                         <div class="developer-card">
-                            <img src="https://placehold.co/150x150/069ff7/FFF?text=CJ" alt="Christian Joshua A. Lacerna">
+                            <img src="{{ url_for('static', filename='imtry/Lacerna.jpg') }}" alt="Christian Joshua A. Lacerna">
                             <h3>LACERNA, CHRISTIAN JOSHUA A.</h3>
                             <p><a href="mailto:qcjlacerna@tip.edu.ph">qcjlacerna@tip.edu.ph</a></p>
                         </div>
                         <div class="developer-card">
-                            <img src="https://placehold.co/150x150/069ff7/FFF?text=AO" alt="Adrian O. Tabiolo">
+                            <img src="{{ url_for('static', filename='imtry/Tabiolo.jpg') }}" alt="Adrian O. Tabiolo">
                             <h3>TABIOLO, ADRIAN O.</h3>
                             <p><a href="mailto:qaotabiolo@tip.edu.ph">qaotabiolo@tip.edu.ph</a></p>
                         </div>
                         <div class="developer-card">
-                            <img src="https://placehold.co/150x150/069ff7/FFF?text=MJ" alt="Mark John V. Jomoc">
+                            <img src="{{ url_for('static', filename='imtry/Jomoc.png') }}" alt="Mark John V. Jomoc">
                             <h3>JOMOC, MARK JOHN V.</h3>
                             <p><a href="mailto:qmjjomoc01@tip.edu.ph">qmjjomoc01@tip.edu.ph</a></p>
                         </div>

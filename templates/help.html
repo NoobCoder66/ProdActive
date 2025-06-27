@@ -3,19 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Help-eboutique</title>
+        <title>Help-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/help.css') }}">
     </head>
     <body>
-        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <header style="position: fixed; top: 0; left: 0; right: 0; background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
             <div style="display: flex; align-items: center;">
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
-            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+            <aside style="position: fixed; top: 60px; left: 0; background-color: #4A4A4A; width: 10%; height: calc(100vh - 60px); padding: 20px; color: white; font-weight: bold;">
                 <nav>
                     <ul class="nav-links">
                         <li><a href="{{ url_for('register_page') }}" class="nav-link">Registration</a></li>
@@ -29,38 +28,62 @@
                     </ul>
                 </nav>      
             </aside>
-            <main class="main-content">
-                <h1>ProdActive POS - Help & Support</h1>
+            <div class="scrollable-main">
+                <main class="main-content">
+                    <h1>ProdActive POS - Help & Support</h1>
 
-                <div class="help-section">
-                    <h2>Frequently Asked Questions (FAQ)</h2>
-                    <div class="faq-item">
-                        <h4>How do I reset my password?</h4>
-                        <p>On the login page, click "Forgot Password". You will be asked to enter your username and answer your security questions to reset your password.</p>
+                    <div class="help-section">
+                        <h2>Frequently Asked Questions (FAQ)</h2>
+                        <div class="faq-item">
+                            <h4>How do I reset my password?</h4>
+                            <p>On the login page, click "Forgot Password". You will be asked to enter your username and answer your security questions to reset your password.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How do I add a new product to the inventory? (Admin)</h4>
+                            <p>Navigate to the 'Inventory' tab from the main dashboard, then click on 'Register Product'. Fill in the required product details and click 'Submit'.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How do I process a customer order?</h4>
+                            <p>From the 'Transaction' tab, click 'Create Order'. Enter the customer's information, then add products to the order. Once all items are added, proceed to checkout.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How can I view sales reports? (Admin)</h4>
+                            <p>Go to the 'Report' section from the admin dashboard. You can then view order details and user logs.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How do I update product information in inventory? (Admin)</h4>
+                            <p>In the 'Inventory' tab, locate the product you wish to update. Click on the 'Edit' button next to the product, make your changes, and then click 'Save'.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>Can I return or exchange an item?</h4>
+                            <p>Returns and exchanges can be processed through the 'Transaction' tab. Select the original order and choose the 'Return/Exchange' option, then follow the prompts.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How do I manage user accounts? (Admin)</h4>
+                            <p>Access the 'Maintenance' tab. Here, you can add new users, modify existing user roles, and deactivate accounts.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>What payment methods are accepted?</h4>
+                            <p>ProdActive POS supports various payment methods including cash, credit/debit cards, and mobile payment options.</p>
+                        </div>
                     </div>
-                    <div class="faq-item">
-                        <h4>How do I add a new product to the inventory? (Admin)</h4>
-                        <p>Navigate to the 'Inventory' tab from the main dashboard, then click on 'Register Product'. Fill in the required product details and click 'Submit'.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h4>How do I process a customer order?</h4>
-                        <p>From the 'Transaction' tab, click 'Create Order'. Enter the customer's information, then add products to the order. Once all items are added, proceed to checkout.</p>
-                    </div>
-                     <div class="faq-item">
-                        <h4>How can I view sales reports? (Admin)</h4>
-                        <p>Go to the 'Report' section from the admin dashboard. You can then view order details and user logs.</p>
-                    </div>
-                </div>
 
-                <div class="help-section">
-                    <h2>Contact Support</h2>
-                    <p>If you encounter any issues or have questions that are not answered here, please contact our support team:</p>
-                    <ul>
-                        <li><strong>Email:</strong> support@prodactive.com</li>
-                        <li><strong>Phone:</strong> (123) 456-7890 (Mon-Fri, 9am-5pm)</li>
-                    </ul>
-                </div>
-            </main>
+                    <div class="help-section">
+                        <h2>User Manual</h2>
+                        <p>For a comprehensive guide on using ProdActive POS, please download our user manual:</p>
+                        <p><a href="{{ url_for('static', filename='ProdActive_User_Manual.pdf') }}" download class="pdf-link">Download User Manual (PDF)</a></p>
+                    </div>
+
+                    <div class="help-section">
+                        <h2>Contact Support</h2>
+                        <p>If you encounter any issues or have questions that are not answered here, please contact our support team:</p>
+                        <ul>
+                            <li><strong>Email:</strong> support@prodactive.com</li>
+                            <li><strong>Phone:</strong> (123) 456-7890 (Mon-Fri, 9am-5pm)</li>
+                        </ul>
+                    </div>
+                </main>
+            </div>
         </div>
         <script>
             function confirmLogout() {

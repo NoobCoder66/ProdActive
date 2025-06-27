@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login-eboutique</title>
+    <title>Forgot Password-ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/frgt_pass.css') }}">
 </head>
 <body>
@@ -15,8 +15,8 @@
             <h1>Reset Password</h1>
             <form action="{{ url_for('reset_password') }}" method="post">
                 <input type="hidden" name="username" value="{{ request.args.get('username') }}">
-                <input type="password" name="new_password" placeholder="Enter new password" required autofocus="">
-                <input type="password" name="confirm_password" placeholder="Confirm new password" required ="">
+                <input type="password" name="new_password" placeholder="Enter new password" required autocomplete="off">
+                <input type="password" name="confirm_password" placeholder="Confirm new password" required autocomplete="off">
                 <div class="button-container">
                     <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
                     <button class="btn" type="submit">Submit</button>

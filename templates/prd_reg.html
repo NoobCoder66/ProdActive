@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Register-eboutique</title>
+        <title>Register-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/input1.css') }}">
     </head>
     <body>
@@ -12,7 +12,6 @@
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
             <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
@@ -51,10 +50,15 @@
                         <label for="category">Category:</label>
                         <select id="category" name="category" required autofocus="">
                             <option value="" disabled selected></option>
-                            <option value="keyboard">Keyboard</option>
-                            <option value="mouse">Mouse</option>
-                            <option value="storage">Storage</option>
-                            <option value="phone">Phone</option>
+                            <option value="Mobile Accessories">Mobile Accessories</option>
+                            <option value="Computer Accessories">Computer Accessories</option>
+                            <option value="Audio/Video">Audio/Video</option>
+                            <option value="Earphones/Headphones">Earphones/Headphones</option>
+                            <option value="Home/Office">Home/Office</option>
+                            <option value="Storage/Drives">Storage/Drives</option>
+                            <option value="Car Accessories">Car Accessories</option>
+                            <option value="Batteries">Batteries</option>
+                            <option value="Others">Others</option>
                         </select>
                     </div>
                     <div class="form-buttons">

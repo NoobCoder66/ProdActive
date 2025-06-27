@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login-eboutique</title>
+    <title>Forgot Password-ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/frgt_pass.css') }}">
 </head>
 <body>
@@ -14,7 +14,7 @@
         <div class="right-section">
             <h1>Enter Username</h1>
             <form action="{{ url_for('forgot_pass_submit') }}" method="post">
-                <input type="text" name="username" placeholder="Employee Username" required autofocus="">
+                <input type="text" name="username" placeholder="Employee Username" required autocomplete="off">
                 <div class="button-container">
                     <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
                     <button class="btn" type="submit">Submit</button>

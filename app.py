@@ -1,19 +1,27 @@
 import hashlib
-# import mysql.connector
-from flask import Flask, request, redirect, url_for, render_template, session, jsonify
+import os
+import csv
+import io
+import mysql.connector
+import math
+from flask import Flask, request, flash, redirect, url_for, render_template, session, jsonify, send_file, make_response
 from decimal import Decimal
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Database connection setup
-# db_config = {
-#     "host": "localhost",
-#     "user": "root",
-#     "password": "",
-#     "database": "ebdb"
-# }
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("MYSQLHOST"),
+        user=os.getenv("MYSQLUSER"),
+        password=os.getenv("MYSQLPASSWORD"),
+        database=os.getenv("MYSQLDATABASE"),
+        port=int(os.getenv("MYSQLPORT"))
+    )
+
 
 # First page to show
 @app.route('/')
@@ -29,8 +37,8 @@ def login():
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
     # Connect to the database
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Query to check user credentials
     query = "SELECT * FROM user WHERE username = %s AND password = %s"
@@ -44,13 +52,13 @@ def login():
         
         log_query = "INSERT INTO user_logs (user_id, action) VALUES (%s, 'login')"
         cursor.execute(log_query, (user['user_id'],))
-        connection.commit()
+        conn.commit()
 
         session['username'] = user['username']
         session['role'] = user['role']
 
         cursor.close()
-        connection.close()
+        cursor.close()
 
         # Redirect based on role
         if user['role'] == 'Admin':
@@ -59,7 +67,7 @@ def login():
             return redirect(url_for('emp_dashboard'))
     else:
         cursor.close()
-        connection.close()
+        conn.close()
         return render_template('message.html', message="Invalid credentials, please try again.", redirect_url='/')
     
 # Route for forgot password
@@ -71,15 +79,15 @@ def forgot_password():
 def forgot_pass_submit():
     username = request.form['username']
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = "SELECT * FROM user WHERE username = %s"
     cursor.execute(query, (username,))
     user = cursor.fetchone()
 
     cursor.close()
-    connection.close()
+    conn.close()
 
     if not user:
         return render_template('message.html', message="Username does not exist.", redirect_url='/forgot_pass')
@@ -98,8 +106,8 @@ def verify_security_questions():
     answer2 = request.form['answer2'].strip().lower()
 
     # Security question answers
-    correct_answer1 = "blue"
-    correct_answer2 = "iphone"
+    correct_answer1 = "technological institute of the philippines"
+    correct_answer2 = "eboutique"
 
     if answer1 == correct_answer1 and answer2 == correct_answer2:
         return redirect(url_for('reset_password', username=username))
@@ -121,15 +129,15 @@ def reset_password():
     
     hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = "UPDATE user SET password = %s WHERE username = %s"
     cursor.execute(query, (hashed_password, username))
-    connection.commit()
+    conn.commit()
 
     cursor.close()
-    connection.close()
+    conn.close()
 
     return render_template('message.html', message="Password Successfully Reset", redirect_url='/')
     
@@ -173,8 +181,8 @@ def register_emp():
 
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         # Insert the data into the user table
         query = """
@@ -184,10 +192,10 @@ def register_emp():
         values = (fname, lname, contacts, username, hashed_password, role)
 
         cursor.execute(query, values)
-        connection.commit()
+        conn.commit()
 
         cursor.close()
-        connection.close()
+        conn.close()
 
         return redirect(url_for('register_emp'))
     
@@ -210,8 +218,8 @@ def register_prod():
         price = request.form['price']
         category = request.form['category']
 
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         # Insert the data into the user table
         query = """
@@ -221,55 +229,114 @@ def register_prod():
         values = (prod_id, prod_name, stock, price, category)
 
         cursor.execute(query, values)
-        connection.commit()
+        conn.commit()
 
         cursor.close()
-        connection.close()
+        conn.close()
 
         return redirect(url_for('register_prod'))
     
     except Exception as e:
         return f"Error: {e}"
 
-# Inventory page
 @app.route('/inventory')
 def inventory_page():
     if 'username' in session:
         try:
             search_query = request.args.get('search', '')
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             if search_query:
-                query = "SELECT * FROM prod WHERE prod_name LIKE %s OR category LIKE %s"
-                cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
+                cursor.execute("""
+                    SELECT * FROM prod 
+                    WHERE prod_name LIKE %s OR category LIKE %s
+                """, ('%' + search_query + '%', '%' + search_query + '%'))
             else:
-                query = "SELECT * FROM prod"
-                cursor.execute(query)
-
+                cursor.execute("SELECT * FROM prod")
             products = cursor.fetchall()
 
-            # Add stock status for each product
+            # Fetch demand per product from checkout table
+            cursor.execute("""
+                SELECT product_id, SUM(quantity) as total_demand
+                FROM checkout
+                WHERE order_id IS NOT NULL
+                GROUP BY product_id
+            """)
+            demand_data = cursor.fetchall()
+            demand_map = {d['product_id']: d['total_demand'] for d in demand_data}
+
+            # EOQ calculation per product
             for product in products:
+                prod_id = product['prod_id']
                 stock = product['stock']
-                if stock <= 15:
+                if prod_id in demand_map:
+                    annual_demand = demand_map[prod_id]
+                else:
+                    annual_demand = 1
+
+                # ordering_cost = product['ordering_cost']
+                # holding_cost = product['holding_cost']
+
+                try:
+                    eoq = math.sqrt((2 * annual_demand * product['ordering_cost']) / product['holding_cost'])
+                except ZeroDivisionError:
+                    eoq = 0
+
+                product['eoq'] = round(eoq)
+
+                if prod_id not in demand_map:
+                    product['status'] = 'Unsold Product'
+                elif stock <= eoq:
                     product['status'] = 'Low Stock'
-                elif stock >= 30:
-                    product['status'] = 'Over Stock'
                 else:
                     product['status'] = 'Normal'
 
             cursor.close()
-            connection.close()
-
-            # Pass products to the template
+            conn.close()
             return render_template('inventory.html', products=products)
 
         except Exception as e:
             return f"Error: {e}"
-        
+
     return redirect(url_for('home'))
+# @app.route('/inventory')
+# def inventory_page():
+#     if 'username' in session:
+#         try:
+#             search_query = request.args.get('search', '')
+
+#             conn = get_db_connection()
+#             cursor = conn.cursor(dictionary=True)
+
+#             if search_query:
+#                 query = "SELECT * FROM prod WHERE prod_name LIKE %s OR category LIKE %s"
+#                 cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
+#             else:
+#                 query = "SELECT * FROM prod"
+#                 cursor.execute(query)
+
+#             products = cursor.fetchall()
+
+#             # Add stock status for each product
+#             for product in products:
+#                 stock = product['stock']
+#                 if stock <= 15:
+#                     product['status'] = 'Low Stock'
+#                 else:
+#                     product['status'] = 'Normal'
+
+#             cursor.close()
+#             conn.close()
+
+#             # Pass products to the template
+#             return render_template('inventory.html', products=products)
+
+#         except Exception as e:
+#             return f"Error: {e}"
+        
+#     return redirect(url_for('home'))
 
 # Inventory page for Employee
 @app.route('/inventory_emp')
@@ -278,38 +345,60 @@ def inventory_emp():
         try:
             search_query = request.args.get('search', '')
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             if search_query:
-                query = "SELECT * FROM prod WHERE prod_name LIKE %s OR category LIKE %s"
-                cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
+                cursor.execute("""
+                    SELECT * FROM prod 
+                    WHERE prod_name LIKE %s OR category LIKE %s
+                """, ('%' + search_query + '%', '%' + search_query + '%'))
             else:
-                query = "SELECT * FROM prod"
-                cursor.execute(query)
-
+                cursor.execute("SELECT * FROM prod")
             products = cursor.fetchall()
 
-            # Add stock status for each product
+            # Fetch demand per product from checkout table
+            cursor.execute("""
+                SELECT product_id, SUM(quantity) as total_demand
+                FROM checkout
+                WHERE order_id IS NOT NULL
+                GROUP BY product_id
+            """)
+            demand_data = cursor.fetchall()
+            demand_map = {d['product_id']: d['total_demand'] for d in demand_data}
+
+            # EOQ calculation per product
             for product in products:
+                prod_id = product['prod_id']
                 stock = product['stock']
-                if stock <= 15:
+                if prod_id in demand_map:
+                    annual_demand = demand_map[prod_id]
+                else:
+                    annual_demand = 1
+
+                # ordering_cost = product['ordering_cost']
+                # holding_cost = product['holding_cost']
+
+                try:
+                    eoq = math.sqrt((2 * annual_demand * product['ordering_cost']) / product['holding_cost'])
+                except ZeroDivisionError:
+                    eoq = 0
+
+                product['eoq'] = round(eoq)
+
+                if prod_id not in demand_map:
+                    product['status'] = 'Unsold Product'
+                elif stock <= eoq:
                     product['status'] = 'Low Stock'
-                elif stock >= 50:
-                    product['status'] = 'Over Stock'
                 else:
                     product['status'] = 'Normal'
 
             cursor.close()
-            connection.close()
-
-            # Pass products to the template
+            conn.close()
             return render_template('emp_inv.html', products=products)
 
         except Exception as e:
             return f"Error: {e}"
-        
-    return redirect(url_for('home'))
 
 # Sales page from Admin panel
 @app.route('/sales')
@@ -322,11 +411,29 @@ def sales_page():
 @app.route('/customer_page', methods=['POST', 'GET'])
 def customer_page():
     if request.method == 'POST':
+        birthdate = request.form.get('birthdate')
+        age = request.form.get('age')
+
+        if (not age or (isinstance(age, str) and not age.isdigit())) and birthdate:
+            try:
+                birth = datetime.strptime(birthdate, '%Y-%m-%d')
+                today = datetime.today()
+                age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            except:
+                age = None
+
         session['customer_name'] = request.form['customer']
         session['email'] = request.form['email']
         session['contacts'] = request.form['contacts']
-        session['age'] = request.form.get('age') or None
-        session['birthdate'] = request.form.get('birthdate') or None
+
+        if isinstance(age, str) and age.isdigit():
+            session['age'] = int(age)
+        elif isinstance(age, int):
+            session['age'] = age
+        else:
+            session['age'] = None
+
+        session['birthdate'] = birthdate
         session['sex'] = request.form.get('sex') or None
         session['tel_no'] = request.form.get('tel_no') or None
         session['street'] = request.form.get('street') or None
@@ -340,8 +447,8 @@ def customer_page():
 # Order Page
 @app.route('/order_page', methods=['GET', 'POST'])
 def order_page():
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
         data = request.get_json()
@@ -351,8 +458,8 @@ def order_page():
             return jsonify({"error": "Invalid data"}), 400
 
         if request.method == 'POST':
-            data = request.get_json()
-            print("Received order data", data)
+            # data = request.get_json()
+            # print("Received order data", data)
 
             if not data or len(data) == 0:
                 return jsonify({"error": "Invalid data"}), 400
@@ -364,8 +471,8 @@ def order_page():
             # Build a lookup map of existing items
             existing_items = {item['prod_id']: item for item in session['order_list']}
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             for item in data:
                 prod_id = item['prod_id']
@@ -399,7 +506,7 @@ def order_page():
             session['order_total'] = sum(item['total_price'] for item in session['order_list'])
 
             cursor.close()
-            connection.close()
+            # connection.close()
 
             return jsonify({"message": "Order received", "redirect": "/checkout_page"})
     else:
@@ -409,7 +516,7 @@ def order_page():
         cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
         products = cursor.fetchall()
         cursor.close()
-        connection.close()
+        conn.close()
         return render_template('order.html', products=products)
     
 @app.route('/check_existing_order')
@@ -449,8 +556,8 @@ def submit_checkout():
     quantities = request.form.getlist('quantity')
     unit_prices = request.form.getlist('unit_price')
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     try:
         insert_customer = """
@@ -488,18 +595,18 @@ def submit_checkout():
             """
             cursor.execute(update_stock, (quantity, prod_id, quantity))
 
-        connection.commit()
+        conn.commit()
         session['latest_order_id'] = order_id
         session.pop('order_list', None)
         return redirect(url_for('receipt_page'))
 
     except Exception as e:
-        connection.rollback()
+        conn.rollback()
         return f"Error during checkout: {e}"
 
     finally:
         cursor.close()
-        connection.close()
+        conn.close()
 
 @app.route('/remove_checkout_item/<int:prod_id>', methods=['POST'])
 def remove_checkout_item(prod_id):
@@ -515,8 +622,8 @@ def receipt_page():
     if not order_id:
         return redirect(url_for('sales_page'))
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Get order info
     cursor.execute("""
@@ -547,7 +654,7 @@ def receipt_page():
     items = cursor.fetchall()
 
     cursor.close()
-    connection.close()
+    conn.close()
 
     return render_template('receipt.html', order=order_info, items=items)
 
@@ -561,11 +668,29 @@ def sales_emp():
 @app.route('/customer_emp', methods=['POST', 'GET'])
 def customer_emp():
     if request.method == 'POST':
+        birthdate = request.form.get('birthdate')
+        age = request.form.get('age')
+
+        if (not age or (isinstance(age, str) and not age.isdigit())) and birthdate:
+            try:
+                birth = datetime.strptime(birthdate, '%Y-%m-%d')
+                today = datetime.today()
+                age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            except:
+                age = None
+
         session['customer_name'] = request.form['customer']
         session['email'] = request.form['email']
         session['contacts'] = request.form['contacts']
-        session['age'] = request.form.get('age') or None
-        session['birthdate'] = request.form.get('birthdate') or None
+
+        if isinstance(age, str) and age.isdigit():
+            session['age'] = int(age)
+        elif isinstance(age, int):
+            session['age'] = age
+        else:
+            session['age'] = None
+            
+        session['birthdate'] = birthdate
         session['sex'] = request.form.get('sex') or None
         session['tel_no'] = request.form.get('tel_no') or None
         session['street'] = request.form.get('street') or None
@@ -578,19 +703,19 @@ def customer_emp():
 
 @app.route('/order_emp', methods=['GET','POST'])
 def order_emp():
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
         data = request.get_json()
-        print("Recieved order data", data)
+        print("Received order data", data)
 
         if not data or len(data) == 0:
             return jsonify({"error": "Invalid data"}), 400
 
         if request.method == 'POST':
-            data = request.get_json()
-            print("Received order data", data)
+            # data = request.get_json()
+            # print("Received order data", data)
 
             if not data or len(data) == 0:
                 return jsonify({"error": "Invalid data"}), 400
@@ -602,8 +727,8 @@ def order_emp():
             # Build a lookup map of existing items
             existing_items = {item['prod_id']: item for item in session['order_list']}
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             for item in data:
                 prod_id = item['prod_id']
@@ -637,9 +762,9 @@ def order_emp():
             session['order_total'] = sum(item['total_price'] for item in session['order_list'])
 
             cursor.close()
-            connection.close()
+            conn.close()
 
-            return jsonify({"message": "Order received", "redirect": "/checkout_page"})
+            return jsonify({"message": "Order received", "redirect": "/checkout_emp"})
     else:
         if 'order_list' not in session:
             session['order_list'] = []
@@ -647,8 +772,13 @@ def order_emp():
         cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
         products = cursor.fetchall()
         cursor.close()
-        connection.close()
+        conn.close()
         return render_template('emp_purchase.html', products=products)
+    
+@app.route('/check_existing_order_emp')
+def check_existing_order_emp():
+    exists = 'order_list' in session and len(session['order_list']) > 0
+    return jsonify({'exists': exists})
 
 @app.route('/checkout_emp')
 def checkout_emp():
@@ -679,8 +809,8 @@ def submit_checkout_emp():
     quantities = request.form.getlist('quantity')
     unit_prices = request.form.getlist('unit_price')
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     try:
         insert_customer = """
@@ -718,18 +848,26 @@ def submit_checkout_emp():
             """
             cursor.execute(update_stock, (quantity, prod_id, quantity))
 
-        connection.commit()
+        conn.commit()
         session['latest_order_id'] = order_id
         session.pop('order_list', None)
         return redirect(url_for('receipt_emp'))
 
     except Exception as e:
-        connection.rollback()
+        conn.rollback()
         return f"Error during checkout: {e}"
 
     finally:
         cursor.close()
-        connection.close()
+        conn.close()
+        
+@app.route('/remove_checkout_item_emp/<int:prod_id>', methods=['POST'])
+def remove_checkout_item_emp(prod_id):
+    order_list = session.get('order_list', [])
+    updated_list = [item for item in order_list if int(item['prod_id']) != prod_id]
+    session['order_list'] = updated_list
+    session['order_total'] = sum(item['quantity'] * item['unit_price'] for item in updated_list)
+    return jsonify(success=True, new_total=session['order_total'])
 
 @app.route('/receipt_emp')
 def receipt_emp():
@@ -737,8 +875,8 @@ def receipt_emp():
     if not order_id:
         return redirect(url_for('sales_emp'))
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
         SELECT o.order_id, o.order_date, o.total_amount, o.payment_amount, o.change_amount,
@@ -766,7 +904,7 @@ def receipt_emp():
     items = cursor.fetchall()
 
     cursor.close()
-    connection.close()
+    conn.close()
 
     return render_template('emp_receipt.html', order=order_info, items=items)
 
@@ -784,8 +922,8 @@ def add_emp():
         try:
             search_query = request.args.get('search', '').strip()
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             if search_query:
                 query = """
@@ -796,7 +934,7 @@ def add_emp():
                 like_pattern = f"%{search_query}%"
                 cursor.execute(query, (like_pattern, like_pattern, like_pattern))
             else:
-                query = "SELECT user_id, firstname, lastname, role, username FROM user"
+                query = "SELECT user_id, firstname, lastname, role, username, email, address, sex, age, status FROM user"
                 cursor.execute(query)
 
             users = cursor.fetchall()
@@ -805,7 +943,7 @@ def add_emp():
                 user['full_name'] = f"{user['firstname']} {user['lastname']}"
 
             cursor.close()
-            connection.close()
+            conn.close()
 
             return render_template('add_emp.html', users=users)
 
@@ -813,6 +951,39 @@ def add_emp():
             return f"Error: {e}"
         
     return redirect(url_for('home'))
+
+@app.route('/add_details', methods=['POST'])
+def add_details():
+    user_id = request.form.get('EmpUser').strip()
+    address = request.form.get('EmpAddress').strip()
+    email = request.form.get('EmpEmail').strip()
+    birthday = request.form.get('EmpAge').strip()
+    sex = request.form.get('EmpSex').strip()
+    status = request.form.get('EmpStatus').strip()
+
+    try:
+        birthdate = datetime.strptime(birthday, "%Y-%m-%d")
+        today = datetime.today()
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+    except Exception:
+        age = None
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = """
+           UPDATE user
+            SET email = %s, address = %s, sex = %s, status = %s, age = %s
+            WHERE user_id = %s
+        """
+        values = (email, address, sex, status, age, user_id )
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('add_emp'))
+    except Exception as e:
+        return f"Error inserting employee: {e}"
 
 # Edit page from Admin panel
 @app.route('/edit')
@@ -827,8 +998,8 @@ def edit_emp():
         try:
             search_query = request.args.get('search', '').strip()
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             if search_query:
                 query = """
@@ -839,7 +1010,7 @@ def edit_emp():
                 like_pattern = f"%{search_query}%"
                 cursor.execute(query, (like_pattern, like_pattern, like_pattern))
             else:
-                query = "SELECT user_id, firstname, lastname, role, username FROM user"
+                query = "SELECT user_id, firstname, lastname, role, username, sex, email, status, address, age FROM user"
                 cursor.execute(query)
 
             users = cursor.fetchall()
@@ -848,7 +1019,7 @@ def edit_emp():
                 user['full_name'] = f"{user['firstname']} {user['lastname']}"
 
             cursor.close()
-            connection.close()
+            conn.close()
 
             return render_template('edit_emp.html', users=users)
 
@@ -857,14 +1028,94 @@ def edit_emp():
         
     return redirect(url_for('home'))
 
+@app.route('/update_employee', methods=['POST'])
+def employee_update():
+    user_id = request.form.get('user_id', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM user WHERE user_id = %s", (user_id,))
+    current_data = cursor.fetchone()
+    cursor.close()
+
+    if not current_data:
+        conn.close()
+        return "Error: User not found", 404
+
+    # Pull form values OR fallback to current data
+    role = request.form.get('role', '').strip() or current_data['role']
+    username = request.form.get('username', '').strip() or current_data['username']
+    email = request.form.get('email', '').strip() or current_data['email']
+    address = request.form.get('address', '').strip() or current_data['address']
+    sex = request.form.get('sex', '').strip() or current_data['sex']
+    status = request.form.get('status', '').strip() or current_data['status']
+    birthday = request.form.get('birthday', '').strip()
+    
+    firstName = request.form.get('firstName', '').strip() or current_data['firstName', '']
+    lastName = request.form.get('lastName', '').strip() or current_data['lastName', '']
+
+    # Calculate age if birthday is given, otherwise keep existing
+    try:
+        if birthday:
+            birthdate = datetime.strptime(birthday, "%Y-%m-%d")
+            today = datetime.today()
+            new_age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        else:
+            new_age = current_data.get('age', None)
+    except Exception:
+        new_age = current_data.get('age', None)
+
+    try:
+        cursor = conn.cursor()
+        query = """
+            UPDATE user
+            SET firstName = %s, lastName = %s, role = %s, username = %s, email = %s, address = %s,
+                sex = %s, status = %s, age = %s
+            WHERE user_id = %s
+        """
+        values = (firstName, lastName, role, username, email, address, sex, status, new_age, user_id)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('edit_emp'))
+    except Exception as e:
+        return f"Error updating employee: {e}"
+    
+@app.route('/Employee_delete', methods=['POST'])
+def Employee_delete():
+    if 'username' not in session:
+        return redirect(url_for('home'))
+    
+    user_id = request.form.get('deleteEmp_id', '').strip()
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("DELETE FROM user_logs WHERE user_id = %s", (user_id,))
+        cursor.execute("DELETE FROM user WHERE user_id = %s", (user_id,))
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            print(f"✅ Employee with ID {user_id} deleted.")
+        else:
+            print(f"⚠️ No employee found with ID {user_id}.")
+
+        cursor.close()
+        return redirect(url_for('edit_emp'))
+
+    except Exception as e:
+        print("❌ Error deleting employee:", e)
+        return f"Error deleting employee: {e}"
+
 @app.route('/edit_prod')
 def edit_prod():
     if 'username' in session:
         try:
             search_query = request.args.get('search', '')
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
             if search_query:
                 query = "SELECT * FROM prod WHERE prod_name LIKE %s OR category LIKE %s"
@@ -876,7 +1127,7 @@ def edit_prod():
             products = cursor.fetchall()
 
             cursor.close()
-            connection.close()
+            conn.close()
 
             return render_template('edit_prod.html', products=products)
 
@@ -885,6 +1136,144 @@ def edit_prod():
         
     return redirect(url_for('home'))
 
+@app.route('/update_product', methods=['POST'])
+def update_product():
+    prod_id = request.form.get('prod_id', '').strip()
+
+    if not prod_id:
+        return "Error: Product ID is required", 400
+
+    # Get current product data
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM prod WHERE prod_id = %s", (prod_id,))
+    current_data = cursor.fetchone()
+    cursor.close()
+
+    if not current_data:
+        conn.close()
+        return "Error: Product not found", 404
+
+    # Use new value if provided, otherwise fallback to current
+    prod_name = request.form.get('ProductName', '').strip() or current_data['prod_name']
+    stock = request.form.get('ProductStock', '').strip() or current_data['stock']
+    price = request.form.get('ProductPrice', '').strip() or current_data['price']
+    category = request.form.get('ProductCategory', '').strip() or current_data['category']
+
+    try:
+        cursor = conn.cursor()
+        query = """
+            UPDATE prod
+            SET prod_name = %s, stock = %s, price = %s, category = %s
+            WHERE prod_id = %s
+        """
+        values = (prod_name, stock, price, category, prod_id)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('edit_prod'))
+    except Exception as e:
+        return f"Error updating product: {e}"
+
+@app.route('/delete_product', methods=['POST'])
+def delete_product():
+    if 'username' not in session:
+        return redirect(url_for('home'))
+
+    prod_id = request.form.get('prod_id', '').strip()
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("DELETE FROM checkout WHERE product_id = %s", (prod_id,))
+        cursor.execute("DELETE FROM prod WHERE prod_id = %s", (prod_id,))
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            print(f"✅ Product with ID {prod_id} deleted.")
+        else:
+            print(f"⚠️ No product found with ID {prod_id}.")
+
+    except Exception as e:
+        print("❌ Error deleting product:", e)
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for('edit_prod'))
+
+@app.route('/export_product_csv')
+def export_product_csv():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = "SELECT * FROM prod"
+        cursor.execute(query)
+        products = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        if not products:
+            return "No products found to export."
+
+        csv_file = io.StringIO()
+        writer = csv.writer(csv_file)
+        writer.writerow(['Product ID', 'Product Name', 'Stock', 'Price', 'Category'])
+
+        for product in products:
+            writer.writerow([product['prod_id'], product['prod_name'], product['stock'], product['price'], product['category']])
+
+        csv_file.seek(0)
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
+        return send_file(
+            io.BytesIO(csv_file.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'products_{today_str}.csv'
+        )
+
+    except Exception as e:
+        return f"Error exporting products: {e}"
+
+@app.route('/export_employee_csv')
+def export_employee_csv():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = "SELECT * FROM user"
+        cursor.execute(query)
+        employees = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        if not employees:
+            return "No employees found to export."
+
+        csv_file = io.StringIO()
+        writer = csv.writer(csv_file)
+        writer.writerow(['User ID', 'Name', 'Role', 'Username'])
+
+        for employee in employees:
+            full_name = f"{employee['firstName']} {employee['lastName']}"
+            writer.writerow([employee['user_id'], full_name, employee['role'], employee['username']])
+
+        csv_file.seek(0)
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
+        return send_file(
+            io.BytesIO(csv_file.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'employees_{today_str}.csv'
+        )
+
+    except Exception as e:
+        return f"Error exporting employees: {e}"
+
 # Report page from Admin panel
 @app.route('/report')
 def report_page():
@@ -892,95 +1281,129 @@ def report_page():
         return render_template('report.html')
     return redirect(url_for('home'))
 
-@app.route('/order_details')
-def order_details():
-    if 'username' in session:
-        try:
-            search_query = request.args.get('search', '').strip()
+@app.route('/sales_summary_data')
+def sales_summary_data():
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+    query = """
+        SELECT p.prod_name AS product_name, SUM(c.quantity) AS total_sales
+        FROM checkout c
+        JOIN prod p ON c.product_id = p.prod_id
+        GROUP BY p.prod_name
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
 
-            if search_query:
-                # SQL with WHERE clause for filtering
-                query = """
-                    SELECT o.order_id, c.customer_name, c.email, c.contacts, o.order_date, o.total_amount
-                    FROM `orders` o
-                    JOIN customer c ON o.customer_id = c.customer_id
-                    WHERE c.customer_name LIKE %s OR c.email LIKE %s OR CAST(c.contacts AS CHAR) LIKE %s
-                """
-                like_pattern = f"%{search_query}%"
-                cursor.execute(query, (like_pattern, like_pattern, like_pattern))
-            else:
-                # Normal query with no search filter
-                query = """
-                    SELECT o.order_id, c.customer_name, c.email, c.contacts, o.order_date, o.total_amount
-                    FROM `orders` o
-                    JOIN customer c ON o.customer_id = c.customer_id
-                """
-                cursor.execute(query)
+    cursor.close()
+    conn.close()
 
-            order_details = cursor.fetchall()
+    return jsonify(result)
+    
+# --- ORDER DETAILS ---
+@app.route('/order_details_data')
+def order_details_data():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-            for order in order_details:
-                order['date'] = order['order_date'].strftime('%B %#d, %Y')
+        query = """
+            SELECT o.order_id, cu.customer_name, p.prod_name, c.quantity,
+                   c.total_price, o.order_date
+            FROM orders o
+            JOIN customer cu ON o.customer_id = cu.customer_id
+            JOIN checkout c ON o.order_id = c.order_id
+            JOIN prod p ON c.product_id = p.prod_id
+            WHERE DATE(o.order_date) = CURDATE()
+            ORDER BY o.order_date DESC
+        """
 
-            cursor.close()
-            connection.close()
+        cursor.execute(query)
+        data = cursor.fetchall()
 
-            return render_template('ord_dtls.html', order_details=order_details)
+        # Optional: format the date nicely
+        for row in data:
+            row['order_date'] = row['order_date'].strftime('%B %d, %Y %I:%M %p')
 
-        except Exception as e:
-            return f"Error: {e}"
-        
-    return redirect(url_for('home'))
+        cursor.close()
+        conn.close()
+        return jsonify(data)
 
-@app.route('/user_logs')
-def user_logs():
-    if 'username' in session:
-        try:
-            search_query = request.args.get('search', '').strip()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-            connection = mysql.connector.connect(**db_config)
-            cursor = connection.cursor(dictionary=True)
+# --- RESTOCK (INVENTORY) ---
+@app.route('/inventory_data')
+def inventory_data():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT prod_id, prod_name, stock FROM prod")
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 
-            if search_query:
-                query = """
-                    SELECT ul.log_id, ul.timestamp, ul.action, u.username, 
-                        CONCAT(u.firstname, ' ', u.lastname) AS full_name
-                    FROM user_logs ul
-                    JOIN user u ON ul.user_id = u.user_id
-                    WHERE u.firstname LIKE %s OR u.lastname LIKE %s OR u.username LIKE %s
-                    ORDER BY ul.timestamp ASC
-                """
-                like_pattern = f"%{search_query}%"
-                cursor.execute(query, (like_pattern, like_pattern, like_pattern))
-            else:
-                query = """
-                    SELECT ul.log_id, ul.timestamp, ul.action, u.username, 
-                        CONCAT(u.firstname, ' ', u.lastname) AS full_name
-                    FROM user_logs ul
-                    JOIN user u ON ul.user_id = u.user_id
-                    ORDER BY ul.timestamp ASC
-                """
-                cursor.execute(query)
+# --- RESTOCK ACTION ---
+@app.route('/restock', methods=['POST'])
+def restock():
+    try:
+        req = request.get_json()
+        prod_id = req.get('product_id')
+        quantity = int(req.get('quantity', 0))
+        if not prod_id or quantity <= 0:
+            return jsonify({'success': False, 'message': 'Invalid input.'}), 400
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE prod SET stock = stock + %s WHERE prod_id = %s", (quantity, prod_id))
+        conn.commit()
+        cursor.execute("SELECT stock FROM prod WHERE prod_id = %s", (prod_id,))
+        new_stock = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True, 'new_stock': new_stock})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500 
 
-            user_logs = cursor.fetchall()
 
-            for log in user_logs:
-                log['date'] = log['timestamp'].strftime('%B %#d, %Y')
-                log['time'] = log['timestamp'].strftime('%I:%M %p').lower()
-                log['log_status'] = log['action'].capitalize()
+@app.route('/user_logs_data')
+def user_logs_data():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-            cursor.close()
-            connection.close()
+        cursor.execute("""
+            SELECT 
+                user_logs.log_id,
+                user_logs.user_id,
+                user_logs.action,
+                user_logs.timestamp,
+                user.username
+            FROM 
+                user_logs
+            JOIN 
+                user ON user_logs.user_id = user.user_id 
+            WHERE 
+                DATE(user_logs.timestamp) = CURDATE()
+            ORDER BY 
+                user_logs.timestamp DESC
+        """)
 
-            return render_template('user_logs.html', user_logs=user_logs)
+        data = cursor.fetchall()
 
-        except Exception as e:
-            return f"Error: {e}"
-        
-    return redirect(url_for('home'))
+        for log in data:
+            log['timestamp'] = log['timestamp'].strftime('%B %d, %Y %I:%M %p')
+
+        cursor.close()
+        conn.close()
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Help page from Admin panel
 @app.route('/help')
@@ -1016,8 +1439,8 @@ def logout():
     username = session.get('username')
 
     if username:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute("SELECT user_id FROM user WHERE username = %s", (username,))
         user = cursor.fetchone()
@@ -1029,10 +1452,10 @@ def logout():
             
             log_query = "INSERT INTO user_logs (user_id, action) VALUES (%s, 'logout')"
             cursor.execute(log_query, (user['user_id'],))
-            connection.commit()
+            conn.commit()
 
         cursor.close()
-        connection.close()
+        conn.close()
 
     session.clear()
     return redirect(url_for('home'))

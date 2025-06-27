@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login-eboutique</title>
+    <title>Questions-ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/question.css') }}">
 </head>
 <body>
@@ -14,10 +14,10 @@
         <div class="right-section">
             <h1>Security Questions</h1>
             <form action="{{ url_for('verify_security_questions') }}" method="post">
-                <label>What's the main theme color of the company?</label>
-                <input type="text" name="answer1" required autofocus="">
-                <label>What type of phones do the company only sell?</label>
-                <input type="text" name="answer2" required ="">
+                <label>What institute or college did the developers of the app study?</label>
+                <input type="text" name="answer1" required autocomplete="off">
+                <label>What company did the developers based their web app?</label>
+                <input type="text" name="answer2" required autocomplete="off">
                 <input type="hidden" name="username" value="{{ request.args.get('username') }}">
                 <div class="button-container">
                     <button type="button" onclick="history.back()" class="btn back-btn">Back</button>

@@ -65,6 +65,18 @@ form {
     font-weight: 600;
     width: auto;
 }
+.select {
+    /* flex: 1; */
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 20px;
+    border: 2px solid #ccc;
+    outline: none;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
 
 .form-buttons-bottom {
     display: flex;

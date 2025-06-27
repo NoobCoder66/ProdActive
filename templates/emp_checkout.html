@@ -3,19 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Transaction-eboutique</title>
+        <title>Transaction-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/checkout.css') }}">
     </head>
     <body>
-        <header style="background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <header style="position: fixed; top: 0; left: 0; right: 0; background-color: #069ff7; padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 1000;">
             <div style="display: flex; align-items: center;">
                 <img src="{{ url_for('static', filename='imtry/emp_icon.png') }}" style="height: 40px; margin-left: 10px;" alt="Employee Icon" title="Employee">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
-            <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
+            <aside style="position: fixed; top: 60px; left: 0; background-color: #4A4A4A; width: 10%; height: calc(100vh - 60px); padding: 20px; color: white; font-weight: bold;">
                 <nav>
                     <ul class="nav-links">
                         <li><a href="{{ url_for('inventory_emp') }}" class="nav-link">Inventory</a></li>
@@ -26,7 +25,7 @@
                     </ul>
                 </nav>      
             </aside>
-            <main class="main-content">
+            <main class="main-content" style="position: fixed; top: 60px; left: 13%; right: 0; bottom: 0; padding: 20px; background-color: #f9f9f9; overflow-y: auto; overflow-x: hidden;">
                 <form class="checkout-content" id="checkoutUI" action="{{ url_for('submit_checkout_emp') }}" method="POST">
                     <input type="hidden" name="customer_name" value="{{ session['customer_name'] }}">
                     <input type="hidden" name="email" value="{{ session['email'] }}">
@@ -69,22 +68,24 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="payment-info">
-                        <label id="totalLabel">Total Cash Payment: </strong>₱{{ "{:,.2f}".format(total_cash_payment) }}</label>
-                        <input type="hidden" name="total_amount" value="{{ total_cash_payment }}">
-                    </div>
-                    <div>
-                        <label for="payment">Customer Payment (₱):</label>
-                        <input type="number" step="0.01" name="payment" id="payment" required oninput="calculateChange()">
-                    </div>
-                    <div>
-                        <label>Change (₱):</label>
-                        <span id="changeDisplay">₱0.00</span>
-                    </div>
-                    <input type="hidden" name="change" id="change">
-                    <div class="form-buttons">
-                        <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
-                        <button type="submit" class="btn Done" disabled>Done</button>
+                    <div class="panel-wrapper">
+                        <div class="payment-info">
+                            <label id="totalLabel">Total Cash Payment: </strong>₱{{ "{:,.2f}".format(total_cash_payment) }}</label>
+                            <input type="hidden" name="total_amount" value="{{ total_cash_payment }}">
+                        </div>
+                        <div>
+                            <label for="payment">Customer Payment (₱):</label>
+                            <input type="number" step="0.01" name="payment" id="payment" required oninput="calculateChange()">
+                        </div>
+                        <div>
+                            <label>Change (₱):</label>
+                            <span id="changeDisplay">₱0.00</span>
+                        </div>
+                        <input type="hidden" name="change" id="change">
+                        <div class="form-buttons">
+                            <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
+                            <button type="submit" class="btn Done" disabled>Done</button>
+                        </div>
                     </div>
                 </form>
             </main>
@@ -99,7 +100,7 @@
                 const row = button.closest('tr');
                 const prodId = row.querySelector('input[name="prod_id"]').value;
 
-                fetch(`/remove_checkout_item/${prodId}`, {
+                fetch(`/remove_checkout_item_emp/${prodId}`, {
                     method: 'POST'
                 })
                 .then(response => response.json())

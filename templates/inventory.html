@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Inventory-eboutique</title>
+        <title>Inventory-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/search.css') }}">
     </head>
     <body>
@@ -12,7 +12,6 @@
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px); width: 100%;">
             <aside style="position: fixed; top: 60px; left: 0; background-color: #4A4A4A; width: 10%; height: calc(100vh - 60px); padding: 20px; color: white; font-weight: bold;">

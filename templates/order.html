@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Transaction-eboutique</title>
+        <title>Transaction-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/order.css') }}">
     </head>
     <body>
@@ -12,7 +12,6 @@
                 <img src="{{ url_for('static', filename='imtry/admin_icon.png') }}" alt="User Icon" style="height: 40px; margin-left: 10px;" alt="Admin Icon" title="Admin">
                 <h2 style="color: black; margin-left: 10px;">{{ session['username'] }}</h2>
             </div>
-            <img src="{{ url_for('static', filename='imtry/logo3.png') }}" alt="logo3" style="height: 40px; margin-right: 10px;">
         </header>
         <div style="display: flex; height: calc(100vh - 60px);">
             <aside style="background-color: #4A4A4A; width: 10%; padding: 20px; color: white; font-weight: bold;">
@@ -48,6 +47,21 @@
                             <input type="number" id="quantity" name="quantity" required>
                         </div>
                         <button type="button" class="btn Add" onclick="addItem()">Add</button>
+                        <div class="form-inline-group">
+                            <label for="categoryFilter">Category:</label>
+                            <select id="categoryFilter" class="select">
+                                <option value="all">All</option>
+                                <option value="Mobile Accessories">Mobile Accessories</option>
+                                <option value="Computer Accessories">Computer Accessories</option>
+                                <option value="Audio/Video">Audio/Video</option>
+                                <option value="Earphones/Headphones">Earphones/Headphones</option>
+                                <option value="Home/Office">Home/Office</option>
+                                <option value="Storage/Drives">Storage/Drives</option>
+                                <option value="Car Accessories">Car Accessories</option>
+                                <option value="Batteries">Batteries</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="table-wrapper">
                         <table border="1" id="productTable">
@@ -83,6 +97,25 @@
         <script>
             let orderList = [];
 
+            function applyFilters() {
+                let nameFilter = document.getElementById("prod_name").value.toLowerCase();
+                let categoryFilter = document.getElementById("categoryFilter").value.toLowerCase();
+                let rows = document.querySelectorAll("#productTable tbody tr");
+
+                rows.forEach(row => {
+                    let nameText = row.innerText.toLowerCase();
+                    let categoryText = row.cells[4].innerText.toLowerCase();
+
+                    let matchesName = nameText.includes(nameFilter);
+                    let matchesCategory = (categoryFilter === "all" || categoryText === categoryFilter);
+
+                    row.style.display = matchesName && matchesCategory ? "" : "none";
+                });
+            }
+
+            document.getElementById("prod_name").addEventListener("keyup", applyFilters);
+            document.getElementById("categoryFilter").addEventListener("change", applyFilters);
+
             document.getElementById("prod_name").addEventListener("keydown", function(event) {
                 if (event.key === "Enter") {
                     event.preventDefault();
@@ -96,30 +129,30 @@
                 }
             });
 
-            document.getElementById("prod_name").addEventListener("keyup", function () {
-                    let filter = this.value.toLowerCase();
-                    let rows = document.querySelectorAll("#productTable tbody tr");
+            // document.getElementById("prod_name").addEventListener("keyup", function () {
+            //         let filter = this.value.toLowerCase();
+            //         let rows = document.querySelectorAll("#productTable tbody tr");
 
-                    rows.forEach(row => {
-                        let text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(filter) ? "" : "none";
-                    });
-                });
+            //         rows.forEach(row => {
+            //             let text = row.innerText.toLowerCase();
+            //             row.style.display = text.includes(filter) ? "" : "none";
+            //         });
+            //     });
                 
-                function selectProduct(row) {
-                    const prodId = row.dataset.prodId;
-                    const prodName = row.dataset.prodName;
+            function selectProduct(row) {
+                const prodId = row.dataset.prodId;
+                const prodName = row.dataset.prodName;
 
-                    document.getElementById("prod_name").value = prodName;
-                    document.getElementById("prod_id").value = prodId;
-                }
+                document.getElementById("prod_name").value = prodName;
+                document.getElementById("prod_id").value = prodId;
+            }
                 
-                document.querySelectorAll("#productTable tbody tr").forEach(row => {
-                    row.style.cursor = "pointer";
-                    row.addEventListener("click", function () {
-                        selectProduct(this);
-                    });
+            document.querySelectorAll("#productTable tbody tr").forEach(row => {
+                row.style.cursor = "pointer";
+                row.addEventListener("click", function () {
+                    selectProduct(this);
                 });
+            });
 
             function addItem() {
                 let prodId = document.getElementById("prod_id").value;
@@ -161,7 +194,6 @@
 
             document.getElementById("done-btn").addEventListener("click", function () {
                 if (orderList.length === 0) {
-        
                     fetch("/check_existing_order")
                         .then(res => res.json())
                         .then(data => {

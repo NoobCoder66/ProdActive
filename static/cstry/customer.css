@@ -65,8 +65,10 @@ input{
 }
 .form-buttons {
     display: flex;
-    margin-top: 40px;
-    margin-left: 980px;
+    justify-content: flex-end;
+    margin-top: 100px;
+    gap: 20px;;
+    padding-right: 30px;
 }
 .btn {
     border: none;
@@ -76,8 +78,8 @@ input{
     color: white;
     border-radius: 30px;
     cursor: pointer;
-    width: 150px;
-    margin-left: 10px;
+    width: 100px;
+    /* margin-left: 50px; */
 }
 .back-btn {
     background-color: #0094FF;
@@ -117,6 +119,7 @@ input{
     flex-direction: column;
     gap: 10px;
     min-width: 250px;
+    height: 350px;
 }
 
 .form-box h3 {
