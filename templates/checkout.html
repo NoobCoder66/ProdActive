@@ -2,6 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta http-equiv="Cache-Control" content="no-store" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Transaction-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/checkout.css') }}">
@@ -94,6 +97,31 @@
             </main>
         </div>
         <script>
+            document.querySelector('form').addEventListener('submit', function (e) {
+                let hasError = false;
+                const inputs = this.querySelectorAll('input, select');
+        
+                inputs.forEach(input => {
+                    const existingError = input.nextElementSibling;
+                    if (existingError && existingError.classList.contains('error-message')) {
+                        existingError.remove();
+                    }
+                    input.classList.remove('input-error');
+
+                    if (input.hasAttribute('required') && !input.value.trim()) {
+                        hasError = true;
+                        input.classList.add('input-error');
+
+                        const errorText = document.createElement('div');
+                        errorText.classList.add('error-message');
+                        errorText.textContent = 'This field is required';
+                        input.insertAdjacentElement('afterend', errorText);
+                    }
+                });
+
+                if (hasError) e.preventDefault();
+            });
+
             function removeRow(button) {
                 if (!confirm("Are you sure you want to remove this item?")) {
                     return

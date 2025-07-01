@@ -39,6 +39,7 @@ body {
 .main-content {
     padding: 20px;
     color: #333;
+    margin-left: 25px;
 }
 .help-section {
     margin-bottom: 30px;
@@ -59,6 +60,7 @@ body {
     text-decoration: none;
     font-weight: bold;
     transition: color 0.3s ease;
+    text-decoration: underline;
 }
 
 .pdf-link:hover {

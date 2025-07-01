@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password-ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/frgt_pass.css') }}">
@@ -15,8 +18,8 @@
             <h1>Reset Password</h1>
             <form action="{{ url_for('reset_password') }}" method="post">
                 <input type="hidden" name="username" value="{{ request.args.get('username') }}">
-                <input type="password" name="new_password" placeholder="Enter new password" required autocomplete="off">
-                <input type="password" name="confirm_password" placeholder="Confirm new password" required autocomplete="off">
+                <input type="password" name="new_password" placeholder="Enter new password" autocomplete="off">
+                <input type="password" name="confirm_password" placeholder="Confirm new password" autocomplete="off">
                 <div class="button-container">
                     <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
                     <button class="btn" type="submit">Submit</button>
@@ -24,5 +27,32 @@
             </form>
         </div>
     </div>
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let hasError = false;
+            const inputs = this.querySelectorAll('input, select');
+
+            // Clear previous errors
+            this.querySelectorAll('.error-message').forEach(el => el.remove());
+            inputs.forEach(input => input.classList.remove('input-error'));
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    hasError = true;
+                    input.classList.add('input-error');
+
+                    // Add error message below input
+                    const error = document.createElement('div');
+                    error.classList.add('error-message');
+                    error.textContent = 'Please fill out this field.';
+                    input.insertAdjacentElement('afterend', error);
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault(); // Block form submission
+            }
+        });
+    </script>
 </body>
 </html>

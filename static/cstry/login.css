@@ -96,3 +96,15 @@ a:hover{
 button:hover {
     background-color: #e6e6e6;
 }
+.input-error {
+    border: 2px solid red;
+}
+
+.error-message {
+    color: rgb(169, 34, 0);
+    font-size: 0.85em;
+    font-weight: 500;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    display: block;
+}

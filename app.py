@@ -7,11 +7,22 @@ import math
 from flask import Flask, request, flash, redirect, url_for, render_template, session, jsonify, send_file, make_response
 from decimal import Decimal
 from datetime import datetime
+from functools import wraps
 from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    return no_cache
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -72,10 +83,12 @@ def login():
     
 # Route for forgot password
 @app.route('/forgot_pass', methods=['GET',' POST'])
+@nocache
 def forgot_password():
     return render_template('frgt_pass.html')
 
 @app.route('/forgot_pass_submit', methods=['POST'])
+@nocache
 def forgot_pass_submit():
     username = request.form['username']
 
@@ -96,10 +109,12 @@ def forgot_pass_submit():
     return redirect(url_for('security_questions', username=username))
 
 @app.route('/security_questions')
+@nocache
 def security_questions():
     return render_template('question.html')
 
 @app.route('/verify_security_questions', methods=['POST'])
+@nocache
 def verify_security_questions():
     username = request.form['username']
     answer1 = request.form['answer1'].strip().lower()
@@ -115,6 +130,7 @@ def verify_security_questions():
         return render_template('message.html', message="Incorrect answers.", redirect_url=url_for('security_questions', username=username))
     
 @app.route('/reset_password', methods=['GET', 'POST'])
+@nocache
 def reset_password():
     if request.method == 'GET':
         username=request.args.get('username')
@@ -143,6 +159,7 @@ def reset_password():
     
 # Route for admin page
 @app.route('/admin')
+@nocache
 def admin_dashboard():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('admin.html', username=session['username'])
@@ -150,6 +167,7 @@ def admin_dashboard():
 
 # Route for employee page
 @app.route('/employee')
+@nocache
 def emp_dashboard():
     if 'username' in session and session['role'] == 'Employee':
         return render_template('emp.html', username=session['username'])
@@ -157,6 +175,7 @@ def emp_dashboard():
 
 # Registration page from Admin panel
 @app.route('/register')
+@nocache
 def register_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('register.html')
@@ -164,6 +183,7 @@ def register_page():
 
 # Employee registration
 @app.route('/register_emp', methods=['GET','POST'])
+@nocache
 def register_emp():
     if request.method == 'GET':
         if 'username' in session and session['role'] == 'Admin':
@@ -174,6 +194,7 @@ def register_emp():
         # Get form data
         fname = request.form['fname']
         lname = request.form['lname']
+        email = request.form['email']
         contacts = request.form['contacts']
         username = request.form['user']
         password = request.form['pass']
@@ -186,10 +207,10 @@ def register_emp():
 
         # Insert the data into the user table
         query = """
-            INSERT INTO user (firstName, lastName, contacts, username, password, role)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO user (firstName, lastName, email, contacts, username, password, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        values = (fname, lname, contacts, username, hashed_password, role)
+        values = (fname, lname, email, contacts, username, hashed_password, role)
 
         cursor.execute(query, values)
         conn.commit()
@@ -204,6 +225,7 @@ def register_emp():
     
 # Product registration
 @app.route('/register_prod', methods=['GET','POST'])
+@nocache
 def register_prod():
     if request.method == 'GET':
         if 'username' in session and session['role'] == 'Admin':
@@ -240,6 +262,7 @@ def register_prod():
         return f"Error: {e}"
 
 @app.route('/inventory')
+@nocache
 def inventory_page():
     if 'username' in session:
         try:
@@ -301,45 +324,9 @@ def inventory_page():
             return f"Error: {e}"
 
     return redirect(url_for('home'))
-# @app.route('/inventory')
-# def inventory_page():
-#     if 'username' in session:
-#         try:
-#             search_query = request.args.get('search', '')
 
-#             conn = get_db_connection()
-#             cursor = conn.cursor(dictionary=True)
-
-#             if search_query:
-#                 query = "SELECT * FROM prod WHERE prod_name LIKE %s OR category LIKE %s"
-#                 cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
-#             else:
-#                 query = "SELECT * FROM prod"
-#                 cursor.execute(query)
-
-#             products = cursor.fetchall()
-
-#             # Add stock status for each product
-#             for product in products:
-#                 stock = product['stock']
-#                 if stock <= 15:
-#                     product['status'] = 'Low Stock'
-#                 else:
-#                     product['status'] = 'Normal'
-
-#             cursor.close()
-#             conn.close()
-
-#             # Pass products to the template
-#             return render_template('inventory.html', products=products)
-
-#         except Exception as e:
-#             return f"Error: {e}"
-        
-#     return redirect(url_for('home'))
-
-# Inventory page for Employee
 @app.route('/inventory_emp')
+@nocache
 def inventory_emp():
     if 'username' in session:
         try:
@@ -402,6 +389,7 @@ def inventory_emp():
 
 # Sales page from Admin panel
 @app.route('/sales')
+@nocache
 def sales_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('sales.html')
@@ -409,6 +397,7 @@ def sales_page():
 
 # Customer Page
 @app.route('/customer_page', methods=['POST', 'GET'])
+@nocache
 def customer_page():
     if request.method == 'POST':
         birthdate = request.form.get('birthdate')
@@ -446,6 +435,7 @@ def customer_page():
 
 # Order Page
 @app.route('/order_page', methods=['GET', 'POST'])
+@nocache
 def order_page():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -520,12 +510,14 @@ def order_page():
         return render_template('order.html', products=products)
     
 @app.route('/check_existing_order')
+@nocache
 def check_existing_order():
     exists = 'order_list' in session and len(session['order_list']) > 0
     return jsonify({'exists': exists})
 
 # Checkout Page
 @app.route('/checkout_page')
+@nocache
 def checkout_page():
     order_list = session.get('order_list', [])
     total_cash_payment = sum(item['quantity'] * item['unit_price'] for item in order_list)
@@ -533,6 +525,7 @@ def checkout_page():
 
 # Save all data
 @app.route('/submit_checkout', methods=['POST'])
+@nocache
 def submit_checkout():
     customer_name = request.form.get('customer_name')
     email = request.form.get('email')
@@ -609,6 +602,7 @@ def submit_checkout():
         conn.close()
 
 @app.route('/remove_checkout_item/<int:prod_id>', methods=['POST'])
+@nocache
 def remove_checkout_item(prod_id):
     order_list = session.get('order_list', [])
     updated_list = [item for item in order_list if int(item['prod_id']) != prod_id]
@@ -617,6 +611,7 @@ def remove_checkout_item(prod_id):
     return jsonify(success=True, new_total=session['order_total'])
 
 @app.route('/receipt')
+@nocache
 def receipt_page():
     order_id = session.get('latest_order_id')
     if not order_id:
@@ -660,12 +655,14 @@ def receipt_page():
 
 # Sales page from Employee
 @app.route('/sales_emp')
+@nocache
 def sales_emp():
     if 'username' in session and session['role'] == 'Employee':
         return render_template('emp_sale.html')
     return redirect(url_for('home'))
 
 @app.route('/customer_emp', methods=['POST', 'GET'])
+@nocache
 def customer_emp():
     if request.method == 'POST':
         birthdate = request.form.get('birthdate')
@@ -702,6 +699,7 @@ def customer_emp():
     return render_template('emp_customer.html')
 
 @app.route('/order_emp', methods=['GET','POST'])
+@nocache
 def order_emp():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -776,17 +774,20 @@ def order_emp():
         return render_template('emp_purchase.html', products=products)
     
 @app.route('/check_existing_order_emp')
+@nocache
 def check_existing_order_emp():
     exists = 'order_list' in session and len(session['order_list']) > 0
     return jsonify({'exists': exists})
 
 @app.route('/checkout_emp')
+@nocache
 def checkout_emp():
     order_list = session.get('order_list', [])
     total_cash_payment = sum(item['quantity'] * item['unit_price'] for item in order_list)
     return render_template('emp_checkout.html', order_list=order_list, total_cash_payment=total_cash_payment)
 
 @app.route('/submit_checkout_emp', methods=['POST'])
+@nocache
 def submit_checkout_emp():
     customer_name = request.form.get('customer_name')
     email = request.form.get('email')
@@ -862,6 +863,7 @@ def submit_checkout_emp():
         conn.close()
         
 @app.route('/remove_checkout_item_emp/<int:prod_id>', methods=['POST'])
+@nocache
 def remove_checkout_item_emp(prod_id):
     order_list = session.get('order_list', [])
     updated_list = [item for item in order_list if int(item['prod_id']) != prod_id]
@@ -870,6 +872,7 @@ def remove_checkout_item_emp(prod_id):
     return jsonify(success=True, new_total=session['order_total'])
 
 @app.route('/receipt_emp')
+@nocache
 def receipt_emp():
     order_id = session.get('latest_order_id')
     if not order_id:
@@ -910,6 +913,7 @@ def receipt_emp():
 
 # Maintenance page from Admin panel
 @app.route('/maintenance')
+@nocache
 def maintenance_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('maintenance.html')
@@ -917,6 +921,7 @@ def maintenance_page():
 
 # Add page from Admin panel
 @app.route('/add_emp')
+@nocache
 def add_emp():
     if 'username' in session:
         try:
@@ -953,6 +958,7 @@ def add_emp():
     return redirect(url_for('home'))
 
 @app.route('/add_details', methods=['POST'])
+@nocache
 def add_details():
     user_id = request.form.get('EmpUser').strip()
     address = request.form.get('EmpAddress').strip()
@@ -987,12 +993,14 @@ def add_details():
 
 # Edit page from Admin panel
 @app.route('/edit')
+@nocache
 def edit_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('edit.html')
     return redirect(url_for('home'))
 
 @app.route('/edit_emp')
+@nocache
 def edit_emp():
     if 'username' in session:
         try:
@@ -1029,6 +1037,7 @@ def edit_emp():
     return redirect(url_for('home'))
 
 @app.route('/update_employee', methods=['POST'])
+@nocache
 def employee_update():
     user_id = request.form.get('user_id', '').strip()
 
@@ -1083,6 +1092,7 @@ def employee_update():
         return f"Error updating employee: {e}"
     
 @app.route('/Employee_delete', methods=['POST'])
+@nocache
 def Employee_delete():
     if 'username' not in session:
         return redirect(url_for('home'))
@@ -1109,6 +1119,7 @@ def Employee_delete():
         return f"Error deleting employee: {e}"
 
 @app.route('/edit_prod')
+@nocache
 def edit_prod():
     if 'username' in session:
         try:
@@ -1137,6 +1148,7 @@ def edit_prod():
     return redirect(url_for('home'))
 
 @app.route('/update_product', methods=['POST'])
+@nocache
 def update_product():
     prod_id = request.form.get('prod_id', '').strip()
 
@@ -1156,7 +1168,6 @@ def update_product():
 
     # Use new value if provided, otherwise fallback to current
     prod_name = request.form.get('ProductName', '').strip() or current_data['prod_name']
-    stock = request.form.get('ProductStock', '').strip() or current_data['stock']
     price = request.form.get('ProductPrice', '').strip() or current_data['price']
     category = request.form.get('ProductCategory', '').strip() or current_data['category']
 
@@ -1164,10 +1175,10 @@ def update_product():
         cursor = conn.cursor()
         query = """
             UPDATE prod
-            SET prod_name = %s, stock = %s, price = %s, category = %s
+            SET prod_name = %s, price = %s, category = %s
             WHERE prod_id = %s
         """
-        values = (prod_name, stock, price, category, prod_id)
+        values = (prod_name, price, category, prod_id)
         cursor.execute(query, values)
         conn.commit()
         cursor.close()
@@ -1177,6 +1188,7 @@ def update_product():
         return f"Error updating product: {e}"
 
 @app.route('/delete_product', methods=['POST'])
+@nocache
 def delete_product():
     if 'username' not in session:
         return redirect(url_for('home'))
@@ -1203,6 +1215,7 @@ def delete_product():
     return redirect(url_for('edit_prod'))
 
 @app.route('/export_product_csv')
+@nocache
 def export_product_csv():
     try:
         conn = get_db_connection()
@@ -1238,6 +1251,7 @@ def export_product_csv():
         return f"Error exporting products: {e}"
 
 @app.route('/export_employee_csv')
+@nocache
 def export_employee_csv():
     try:
         conn = get_db_connection()
@@ -1276,12 +1290,14 @@ def export_employee_csv():
 
 # Report page from Admin panel
 @app.route('/report')
+@nocache
 def report_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('report.html')
     return redirect(url_for('home'))
 
 @app.route('/sales_summary_data')
+@nocache
 def sales_summary_data():
     
     conn = get_db_connection()
@@ -1303,6 +1319,7 @@ def sales_summary_data():
     
 # --- ORDER DETAILS ---
 @app.route('/order_details_data')
+@nocache
 def order_details_data():
     try:
         conn = get_db_connection()
@@ -1335,6 +1352,7 @@ def order_details_data():
 
 # --- RESTOCK (INVENTORY) ---
 @app.route('/inventory_data')
+@nocache
 def inventory_data():
     try:
         conn = get_db_connection()
@@ -1350,6 +1368,7 @@ def inventory_data():
 
 # --- RESTOCK ACTION ---
 @app.route('/restock', methods=['POST'])
+@nocache
 def restock():
     try:
         req = request.get_json()
@@ -1371,6 +1390,7 @@ def restock():
 
 
 @app.route('/user_logs_data')
+@nocache
 def user_logs_data():
     try:
         conn = get_db_connection()
@@ -1407,6 +1427,7 @@ def user_logs_data():
 
 # Help page from Admin panel
 @app.route('/help')
+@nocache
 def help_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('help.html')
@@ -1414,6 +1435,7 @@ def help_page():
 
 # About page from Admin panel
 @app.route('/about')
+@nocache
 def about_page():
     if 'username' in session and session['role'] == 'Admin':
         return render_template('about.html')
@@ -1421,6 +1443,7 @@ def about_page():
 
 # Help page from Employee panel
 @app.route('/help_emp')
+@nocache
 def help_emp():
     if 'username' in session and session['role'] == 'Employee':
         return render_template('emp_help.html')
@@ -1428,6 +1451,7 @@ def help_emp():
 
 # About page from Employee panel
 @app.route('/about_emp')
+@nocache
 def about_emp():
     if 'username' in session and session['role'] == 'Employee':
         return render_template('emp_about.html')

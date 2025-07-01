@@ -2,6 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta http-equiv="Cache-Control" content="no-store" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Maintenance-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/edit.css') }}">
@@ -45,7 +48,6 @@
                                 <tr>
                                     <th>Product ID</th>
                                     <th>Name</th>
-                                    <th>Stock</th>
                                     <th>Price</th>
                                     <th>Category</th>
                                 </tr>
@@ -55,7 +57,6 @@
                                 <tr onclick="selectRow(this)">
                                     <td>{{ product.prod_id }}</td>
                                     <td>{{ product.prod_name }}</td>
-                                    <td>{{ product.stock }}</td>
                                     <td>{{ product.price }}</td>
                                     <td>{{ product.category }}</td>        
                                 </tr>
@@ -72,7 +73,6 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <span id="modalTitle">Edit Product</span>
-                        <span class="close" id="closeModal">&times;</span>
                     </div>
                     <div class="modal-body">
                         <form id="productForm" action="{{ url_for('update_product') }}" method="POST">
@@ -85,12 +85,8 @@
                                 <input type="text" id="productName" name="ProductName" >
                             </div>
                             <div class="form-group">
-                                <label for="productStock">Stock:</label>
-                                <input type="number" id="productStock" name="ProductStock" min="0" >
-                            </div>
-                            <div class="form-group">
                                 <label for="productPrice">Price:</label>
-                                <input type="number" id="productPrice" name="ProductPrice" step="0.01" min="0" >
+                                <input type="text" id="productPrice" name="ProductPrice" pattern="^\d+(\.\d{1,2})?$" inputmode="decimal">
                             </div>
                             <div class="form-group">
                                 <label for="productCategory">Category:</label>
@@ -133,10 +129,6 @@
                                 <input type="text" id="deleteProdName" name="deleteProdName" class="delete-input" readonly>
                             </div>
                             <div class="form-group1">
-                                <label class="delete-label" for="deleteProdStock">Stock:</label>
-                                <input type="text" id="deleteProdStock" name="deleteProdStock" class="delete-input" readonly>
-                            </div>
-                            <div class="form-group1">
                                 <label class="delete-label" for="deleteProdPrice">Price:</label>
                                 <input type="text" id="deleteProdPrice" name="deleteProdPrice" class="delete-input" readonly>
                             </div>
@@ -177,22 +169,44 @@
                 const cells = selectedRow.getElementsByTagName('td');
                 document.getElementById('productId').value = cells[0].textContent;
                 document.getElementById('productName').value = cells[1].textContent;
-                document.getElementById('productStock').value = cells[2].textContent;
-                document.getElementById('productPrice').value = cells[3].textContent;
-                document.getElementById('productCategory').value = cells[4].textContent.trim().toLowerCase();
+                // document.getElementById('productStock').value = cells[2].textContent;
+                document.getElementById('productPrice').value = cells[2].textContent;
+                document.getElementById('productCategory').value = cells[3].textContent.trim().toLowerCase();
                 document.getElementById('productModal').style.display = 'block';
+            });
+
+            document.getElementById('productPrice').addEventListener('input', function (e) {
+                const input = e.target;
+                let value = input.value;
+
+                // Remove all invalid characters (only allow digits and a single dot)
+                value = value.replace(/[^0-9.]/g, '');
+
+                // Ensure only one dot is allowed
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts[1]; // Discard additional dots
+                }
+
+                // Limit to 2 decimal places
+                if (parts[1]) {
+                    parts[1] = parts[1].substring(0, 2);
+                    value = parts[0] + '.' + parts[1];
+                }
+
+                input.value = value;
+            });
+
+            document.getElementById('productPrice').addEventListener('paste', function (e) {
+                const paste = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^\d+(\.\d{1,2})?$/.test(paste)) {
+                    e.preventDefault();
+                }
             });
 
             document.getElementById('closeBtn').addEventListener('click', function () {
                 document.getElementById('productModal').style.display = 'none';
             });
-
-            // window.onclick = function(event) {
-            //     const modal = document.getElementById('productModal');
-            //     if (event.target == modal) {
-            //         modal.style.display = "none";
-            //     }
-            // }
 
             document.getElementById('saveBtn').addEventListener('click', function () {
                 const form = document.getElementById('productForm');
@@ -220,9 +234,9 @@
                 const deleteCells = selectedRow.getElementsByTagName('td');
                 document.getElementById('deleteProductId').value = deleteCells[0].textContent;
                 document.getElementById('deleteProdName').value = deleteCells[1].textContent;
-                document.getElementById('deleteProdStock').value = deleteCells[2].textContent;
-                document.getElementById('deleteProdPrice').value = deleteCells[3].textContent;
-                document.getElementById('deleteProdCategory').value = deleteCells[4].textContent.trim().toLowerCase();
+                // document.getElementById('deleteProdStock').value = deleteCells[2].textContent;
+                document.getElementById('deleteProdPrice').value = deleteCells[2].textContent;
+                document.getElementById('deleteProdCategory').value = deleteCells[3].textContent.trim().toLowerCase();
                 document.getElementById('deleteModal').style.display = 'block';
             });
 
@@ -230,14 +244,6 @@
             document.getElementById('cancelDeleteBtn').addEventListener('click', function () {
                 document.getElementById('deleteModal').style.display = 'none';
             });
-
-
-            // window.onclick = function(event) {
-            //     const deleteModal = document.getElementById('deleteModal');
-            //     if (event.target === deleteModal) {
-            //         deleteModal.style.display = "none";
-            //     }
-            // }
 
             window.onclick = function(event) {
                 const editModal = document.getElementById('productModal');
@@ -251,7 +257,6 @@
                     deleteModal.style.display = "none";
                 }
             }
-
 
             document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
                 console.log('Submitted Product ID:', document.getElementById('deleteProductId').value);

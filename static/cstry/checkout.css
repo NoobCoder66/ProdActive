@@ -143,3 +143,14 @@ tr:hover {
 .btn:hover {
     background-color: #007acc;
 }
+.input-error {
+    border: 2px solid red;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.85em;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    display: block;
+}

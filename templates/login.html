@@ -14,12 +14,39 @@
         <div class="right-section">
             <h1>Sign In</h1>
             <form action="{{ url_for('login') }}" method="post">
-                <input type="text" name="username" id = "username" placeholder="Username" required autocomplete="off">
-                <input type="password" name="password" id = "password" placeholder="Password" required autocomplete="off">
+                <input type="text" name="username" id = "username" placeholder="Username" autocomplete="off">
+                <input type="password" name="password" id = "password" placeholder="Password" autocomplete="off">
                 <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
                 <button class="btn" type="submit">Log In</button>
             </form>
         </div>
     </div>
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let hasError = false;
+            const inputs = this.querySelectorAll('input, select');
+
+            // Clear previous errors
+            this.querySelectorAll('.error-message').forEach(el => el.remove());
+            inputs.forEach(input => input.classList.remove('input-error'));
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    hasError = true;
+                    input.classList.add('input-error');
+
+                    // Add error message below input
+                    const error = document.createElement('div');
+                    error.classList.add('error-message');
+                    error.textContent = 'Please fill out this field.';
+                    input.insertAdjacentElement('afterend', error);
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault(); // Block form submission
+            }
+        });
+    </script>
 </body>
 </html>

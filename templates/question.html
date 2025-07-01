@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Questions-ProdActive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='cstry/question.css') }}">
@@ -15,9 +18,9 @@
             <h1>Security Questions</h1>
             <form action="{{ url_for('verify_security_questions') }}" method="post">
                 <label>What institute or college did the developers of the app study?</label>
-                <input type="text" name="answer1" required autocomplete="off">
+                <input type="text" name="answer1" autocomplete="off" placeholder="">
                 <label>What company did the developers based their web app?</label>
-                <input type="text" name="answer2" required autocomplete="off">
+                <input type="text" name="answer2" autocomplete="off" placeholder="">
                 <input type="hidden" name="username" value="{{ request.args.get('username') }}">
                 <div class="button-container">
                     <button type="button" onclick="history.back()" class="btn back-btn">Back</button>
@@ -26,5 +29,42 @@
             </form>
         </div>
     </div>
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let hasError = false;
+            const inputs = this.querySelectorAll('input[type="text"]');
+
+            inputs.forEach(input => {
+                input.classList.remove('input-error');
+
+                // Reset placeholder
+                input.placeholder = input.dataset.originalPlaceholder || '';
+            });
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    hasError = true;
+                    input.classList.add('input-error');
+
+                    if (!input.dataset.originalPlaceholder) {
+                        input.dataset.originalPlaceholder = input.placeholder;
+                    }
+  
+                    input.placeholder = 'Please answer this.';
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault(); // Prevent submission
+            }
+        });
+
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('input', function () {
+                input.classList.remove('input-error');
+                input.placeholder = input.dataset.originalPlaceholder || '';
+            });
+        });
+    </script>
 </body>
 </html>

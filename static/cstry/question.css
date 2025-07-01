@@ -104,3 +104,13 @@ button {
 button:hover {
     background-color: #e6e6e6;
 }
+.input-error {
+    color: red;
+}
+
+.error-message {
+    color: rgb(205, 41, 0);
+    font-size: 0.85em;
+    font-weight: 500;
+    display: block;
+}

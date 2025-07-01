@@ -2,6 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta http-equiv="Cache-Control" content="no-store" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Register-ProdActive</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='cstry/input1.css') }}">
@@ -32,23 +35,23 @@
                 <form id="registration-form" class="registration-form" action="{{ url_for('register_prod') }}" method="POST">
                     <div class="form-group">
                         <label for="prod_id">ID:</label>
-                        <input type="text" id="prod_id" name="prod_id" required autofocus="">
+                        <input type="text" id="prod_id" name="prod_id" autocomplete="off" maxlength="7" inputmode="numeric" placeholder="">
                     </div>
                     <div class="form-group">
                         <label for="prod_name">Name:</label>
-                        <input type="text" id="prod_name" name="prod_name" required autofocus="">
+                        <input type="text" id="prod_name" name="prod_name" autocomplete="off" maxlength="64" placeholder="">
                     </div>
                     <div class="form-group">
                         <label for="quantity">Stock:</label>
-                        <input type="number" id="quantity" name="stock" required autofocus="">
+                        <input type="text" id="quantity" name="stock" autocomplete="off" maxlength="5" inputmode="numeric" placeholder="">
                     </div>
                     <div class="form-group">
                         <label for="price">Price:</label>
-                        <input type="number" id="price" name="price" required autofocus="">
+                        <input type="text" id="price" name="price" autocomplete="off" maxlength="10" inputmode="decimal" placeholder="">
                     </div>
                     <div class="form-group">
                         <label for="category">Category:</label>
-                        <select id="category" name="category" required autofocus="">
+                        <select id="category" name="category">
                             <option value="" disabled selected></option>
                             <option value="Mobile Accessories">Mobile Accessories</option>
                             <option value="Computer Accessories">Computer Accessories</option>
@@ -69,6 +72,90 @@
             </main>
         </div>
         <script>
+            // Prevent letters or symbols in number fields
+            ['prod_id', 'quantity'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function () {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+
+            document.getElementById('price').addEventListener('input', function () {
+                let value = this.value;
+
+                // Allow only digits and one dot
+                value = value.replace(/[^0-9.]/g, '');
+
+                // Only one dot allowed
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts[1];
+                }
+
+                // Limit to 2 decimal places
+                if (parts[1]) {
+                    parts[1] = parts[1].slice(0, 2);
+                    value = parts[0] + '.' + parts[1];
+                }
+
+                this.value = value;
+            });
+
+            document.getElementById('price').addEventListener('blur', function () {
+                if (this.value && !isNaN(this.value)) {
+                    this.value = parseFloat(this.value).toFixed(2);
+                }
+            });
+
+            // Reset error placeholder and border on focus
+            const allInputs = document.querySelectorAll('input');
+            allInputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    input.placeholder = '';
+                    input.classList.remove('input-error');
+                });
+            });
+
+            document.querySelector('form').addEventListener('submit', function (e) {
+                let hasError = false;
+                const inputs = this.querySelectorAll('input, select');
+
+                // Clear previous errors
+                inputs.forEach(input => {
+                    input.classList.remove('input-error');
+                });
+
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        hasError = true;
+                        input.classList.add('input-error');
+                        input.value = '';
+                        input.placeholder = 'Please fill out this field.';
+                    }
+                });
+
+                // Custom number validation for stock
+                const quantityInput = document.getElementById('quantity');
+                if (quantityInput.value && (!/^\d+$/.test(quantityInput.value) || parseInt(quantityInput.value) < 0)) {
+                    hasError = true;
+                    quantityInput.classList.add('input-error');
+                    quantityInput.value = '';
+                    quantityInput.placeholder = 'Only positive numbers allowed';
+                }
+
+                // Custom number validation for price
+                const priceInput = document.getElementById('price');
+                if (priceInput.value && (!/^\d+(\.\d{1,2})?$/.test(priceInput.value) || parseFloat(priceInput.value) < 0)) {
+                    hasError = true;
+                    priceInput.classList.add('input-error');
+                    priceInput.value = '';
+                    priceInput.placeholder = 'Enter a valid price';
+                }
+
+                if (hasError) {
+                    e.preventDefault(); // Block form submission
+                }
+            });
+
             function confirmLogout() {
                 if (confirm("Are you sure you want to log out?")) {
                     window.location.href = "{{ url_for('logout') }}";
