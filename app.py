@@ -205,6 +205,22 @@ def register_emp():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # Check if email and username already exists
+        cursor.execute("SELECT email, username FROM user WHERE email = %s OR username = %s", (email, username))
+        existing = cursor.fetchall()
+
+        for row in existing:
+            if row['email'] == email:
+                flash("Email already exists. Please use a different email.", "error")
+                cursor.close()
+                conn.close()
+                return redirect(url_for('register_emp'))
+            if row['username'] == username:
+                flash("Username already exists. Please choose another.", "error")
+                cursor.close()
+                conn.close()
+                return redirect(url_for('register_emp'))
+
         # Insert the data into the user table
         query = """
             INSERT INTO user (firstName, lastName, email, contacts, username, password, role)
@@ -218,6 +234,7 @@ def register_emp():
         cursor.close()
         conn.close()
 
+        flash("Employee registered successfully.", "success")
         return redirect(url_for('register_emp'))
     
     except Exception as e:
@@ -243,6 +260,16 @@ def register_prod():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # Check if prod_id or prod_name already exists
+        cursor.execute("SELECT * FROM prod WHERE prod_id = %s OR prod_name = %s", (prod_id, prod_name))
+        existing = cursor.fetchone()
+
+        if existing:
+            flash("Product ID or Name already exists!", "error")
+            cursor.close()
+            conn.close()
+            return redirect(url_for('register_prod'))
+
         # Insert the data into the user table
         query = """
             INSERT INTO prod (prod_id, prod_name, stock, price, category)
@@ -255,7 +282,8 @@ def register_prod():
 
         cursor.close()
         conn.close()
-
+        
+        flash("Product registered successfully.", "success")
         return redirect(url_for('register_prod'))
     
     except Exception as e:

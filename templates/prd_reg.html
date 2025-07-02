@@ -31,7 +31,16 @@
                     </ul>
                 </nav>      
             </aside>
-            <main class="main-content">
+            <main class="main-content" style="position: relative;">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <ul class="flashes">
+                            {% for category, message in messages %}
+                                <li class="flash {{ category }}">{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endwith %}
                 <form id="registration-form" class="registration-form" action="{{ url_for('register_prod') }}" method="POST">
                     <div class="form-group">
                         <label for="prod_id">ID:</label>
@@ -155,6 +164,13 @@
                     e.preventDefault(); // Block form submission
                 }
             });
+
+            setTimeout(() => {
+                document.querySelectorAll('.flash').forEach(el => {
+                    el.style.transition = "opacity 0.5s ease";
+                    el.style.opacity = '0';
+                });
+            }, 4000);
 
             function confirmLogout() {
                 if (confirm("Are you sure you want to log out?")) {
