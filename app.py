@@ -962,7 +962,6 @@ def add_emp():
 def add_details():
     user_id = request.form.get('EmpUser').strip()
     address = request.form.get('EmpAddress').strip()
-    email = request.form.get('EmpEmail').strip()
     birthday = request.form.get('EmpAge').strip()
     sex = request.form.get('EmpSex').strip()
     status = request.form.get('EmpStatus').strip()
@@ -979,10 +978,10 @@ def add_details():
         cursor = conn.cursor(dictionary=True)
         query = """
            UPDATE user
-            SET email = %s, address = %s, sex = %s, status = %s, age = %s
+            SET address = %s, sex = %s, status = %s, age = %s
             WHERE user_id = %s
         """
-        values = (email, address, sex, status, age, user_id )
+        values = (address, sex, status, age, user_id )
         cursor.execute(query, values)
         conn.commit()
         cursor.close()
@@ -1004,6 +1003,7 @@ def edit_page():
 def edit_emp():
     if 'username' in session:
         try:
+            current_username = session['username']
             search_query = request.args.get('search', '').strip()
 
             conn = get_db_connection()
@@ -1013,13 +1013,18 @@ def edit_emp():
                 query = """
                     SELECT user_id, firstname, lastname, role, username
                     FROM user
-                    WHERE firstname LIKE %s OR lastname LIKE %s OR username LIKE %s
+                    WHERE (firstname LIKE %s OR lastname LIKE %s OR username LIKE %s)
+                      AND username != %s
                 """
                 like_pattern = f"%{search_query}%"
-                cursor.execute(query, (like_pattern, like_pattern, like_pattern))
+                cursor.execute(query, (like_pattern, like_pattern, like_pattern, current_username))
             else:
-                query = "SELECT user_id, firstname, lastname, role, username, sex, email, status, address, age FROM user"
-                cursor.execute(query)
+                query = """
+                    SELECT user_id, firstname, lastname, role, username, sex, email, status, address, age
+                    FROM user
+                    WHERE username != %s
+                """
+                cursor.execute(query, (current_username,))
 
             users = cursor.fetchall()
 

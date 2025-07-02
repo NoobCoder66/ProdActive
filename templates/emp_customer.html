@@ -36,11 +36,11 @@
 
                         <div class="form-box profile">
                             <h3><img src="{{ url_for('static', filename='imtry/profile_info.png') }}" style="height: 20px;"> Profile</h3>
-                            <label>Name: <input type="text" name="customer" required></label>
-                            <label>Birthdate: <input type="date" name="birthdate" id="birthdate" required onchange="calculateAge()"></label>
+                            <label>Name: <input type="text" name="customer" autocomplete="off" maxlength="50"></label>
+                            <label>Birthdate: <input type="date" name="birthdate" id="birthdate" autocomplete="off" onchange="calculateAge()"></label>
                             <input type="hidden" name="age" id="calculateAge">
                             <label>Sex:
-                                <select name="sex" required>
+                                <select name="sex">
                                     <option value="">-- Select --</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
@@ -51,16 +51,16 @@
 
                         <div class="form-box contact">
                             <h3><img src="{{ url_for('static', filename='imtry/contacts.png') }}" style="height: 20px;"> Contacts</h3>
-                            <label>Tel no.: <input type="tel" name="tel_no"></label>
-                            <label>Mobile: <input type="tel" name="contacts" required></label>
-                            <label>Email: <input type="email" name="email" required></label>
+                            <label>Tel no.: <input type="tel" name="tel_no" autocomplete="off" maxlength="8" placeholder="optional"></label>
+                            <label>Mobile: <input type="tel" name="contacts" autocomplete="off" maxlength="11" inputmode="numeric" pattern="[0-9]*"></label>
+                            <label>Email: <input type="email" name="email" autocomplete="off" maxlength="30"></label>
                         </div>
 
                         <div class="form-box address">
                             <h3><img src="{{ url_for('static', filename='imtry/address.png') }}" style="height: 20px;"> Address</h3>
-                            <label>Street: <input type="text" name="street" required></label>
-                            <label>City: <input type="text" name="city" required></label>
-                            <label>Zip: <input type="text" name="zip" required></label>
+                            <label>Street: <input type="text" name="street" autocomplete="off" maxlength="50" placeholder="optional"></label>
+                            <label>City: <input type="text" name="city" autocomplete="off" maxlength="50" placeholder="optional"></label>
+                            <label>Zip: <input type="text" name="zip" autocomplete="off" maxlength="4" inputmode="numeric" placeholder="optional"></label>
                         </div>
 
                     </div>
@@ -76,26 +76,62 @@
             document.querySelector('form').addEventListener('submit', function (e) {
                 let hasError = false;
                 const inputs = this.querySelectorAll('input, select');
-        
+
+                // Define required field names
+                const requiredFields = ['customer', 'birthdate', 'sex', 'contacts', 'email'];
+
+                // Clear previous errors
+                this.querySelectorAll('.error-message').forEach(el => el.remove());
+                inputs.forEach(input => input.classList.remove('input-error'));
+
                 inputs.forEach(input => {
-                    const existingError = input.nextElementSibling;
-                    if (existingError && existingError.classList.contains('error-message')) {
-                        existingError.remove();
-                    }
-                    input.classList.remove('input-error');
+                    const name = input.getAttribute('name');
+                    const value = input.value.trim();
 
-                    if (input.hasAttribute('required') && !input.value.trim()) {
+                    // Validate only required fields
+                    if (requiredFields.includes(name) && !value) {
                         hasError = true;
-                        input.classList.add('input-error');
+                        addError(input, 'Please fill out this field.');
+                    }
 
-                        const errorText = document.createElement('div');
-                        errorText.classList.add('error-message');
-                        errorText.textContent = 'This field is required';
-                        input.insertAdjacentElement('afterend', errorText);
+                    // Email validation
+                    if (name === 'email' && value) {
+                        const emailPattern = /^[^@]+@[^@]+\.[^@]+$/;
+                        if (!emailPattern.test(value) || !value.endsWith('.com')) {
+                            hasError = true;
+                            addError(input, 'Please enter a valid email ending in .com.');
+                        }
+                    }
+                    
+                    const optionalFields = ['tel_no', 'street', 'city', 'zip'];
+                    if (optionalFields.includes(name) && !value) {
+                        addError(input, 'Please fill out this field.');
                     }
                 });
 
-                if (hasError) e.preventDefault();
+                if (hasError) {
+                    e.preventDefault();  // Block form submission
+                }
+            });
+
+            function addError(input, message) {
+                input.classList.add('input-error');
+                input.value = '';
+                input.placeholder = message;
+            }
+
+            // Restrict input for number-only fields
+            document.querySelector('[name="contacts"]').addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            document.querySelector('[name="zip"]').addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            // Allow numbers and hyphen for Tel no.
+            document.querySelector('[name="tel_no"]').addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9\-]/g, '');
             });
             
             function calculateAge() {

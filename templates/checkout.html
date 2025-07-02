@@ -81,7 +81,7 @@
                         </div>
                         <div>
                             <label for="payment">Customer Payment (₱):</label>
-                            <input type="number" step="0.01" name="payment" id="payment" required oninput="calculateChange()">
+                            <input type="text" name="payment" id="payment" autocomplete="off" maxlength="10" inputmode="decimal" placeholder="" oninput="calculateChange()">
                         </div>
                         <div>
                             <label>Change (₱):</label>
@@ -97,29 +97,58 @@
             </main>
         </div>
         <script>
+            // Allow only numbers and one decimal in payment input
+            document.getElementById('payment').addEventListener('input', function () {
+                let value = this.value;
+
+                // Keep only digits and one dot
+                value = value.replace(/[^0-9.]/g, '');
+
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts[1];
+                }
+
+                if (parts[1]) {
+                    parts[1] = parts[1].slice(0, 2); // Truncate to 2 decimals
+                    value = parts[0] + '.' + parts[1];
+                }
+
+                this.value = value;
+                calculateChange(); // Update change while typing
+            });
+
+            document.getElementById('payment').addEventListener('blur', function () {
+                if (this.value && !isNaN(this.value)) {
+                    this.value = parseFloat(this.value).toFixed(2);
+                    calculateChange();
+                }
+            });
+
+            // Add red border and placeholder if empty or invalid on submit
             document.querySelector('form').addEventListener('submit', function (e) {
                 let hasError = false;
-                const inputs = this.querySelectorAll('input, select');
-        
-                inputs.forEach(input => {
-                    const existingError = input.nextElementSibling;
-                    if (existingError && existingError.classList.contains('error-message')) {
-                        existingError.remove();
-                    }
-                    input.classList.remove('input-error');
+                const paymentInput = document.getElementById('payment');
+                const value = paymentInput.value.trim();
 
-                    if (input.hasAttribute('required') && !input.value.trim()) {
-                        hasError = true;
-                        input.classList.add('input-error');
+                paymentInput.classList.remove('input-error');
 
-                        const errorText = document.createElement('div');
-                        errorText.classList.add('error-message');
-                        errorText.textContent = 'This field is required';
-                        input.insertAdjacentElement('afterend', errorText);
-                    }
-                });
+                if (!value || !/^\d+(\.\d{1,2})?$/.test(value)) {
+                    hasError = true;
+                    paymentInput.classList.add('input-error');
+                    paymentInput.value = '';
+                    paymentInput.placeholder = 'Enter a valid amount';
+                }
 
-                if (hasError) e.preventDefault();
+                if (hasError) {
+                    e.preventDefault();
+                }
+            });
+
+            // Remove error border on focus
+            document.getElementById('payment').addEventListener('focus', function () {
+                this.classList.remove('input-error');
+                this.placeholder = '';
             });
 
             function removeRow(button) {

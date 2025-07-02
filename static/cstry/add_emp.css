@@ -55,7 +55,7 @@ body {
 .table-wrapper {
     width: 100%;
     overflow-y: scroll;
-    max-height: calc(50vh - 67px);
+    max-height: calc(50vh - 22px);
     margin-top: 10px;
     scrollbar-width: none;
     border: 1px solid black;
