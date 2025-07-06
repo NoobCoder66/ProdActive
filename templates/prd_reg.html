@@ -43,8 +43,8 @@
                 {% endwith %}
                 <form id="registration-form" class="registration-form" action="{{ url_for('register_prod') }}" method="POST">
                     <div class="form-group">
-                        <label for="prod_id">ID:</label>
-                        <input type="text" id="prod_id" name="prod_id" autocomplete="off" maxlength="7" inputmode="numeric" placeholder="">
+                        <!-- <label for="prod_id">ID:</label> -->
+                        <input type="hidden" id="prod_id" name="prod_id" value="">
                     </div>
                     <div class="form-group">
                         <label for="prod_name">Name:</label>
@@ -71,6 +71,40 @@
                             <option value="Car Accessories">Car Accessories</option>
                             <option value="Batteries">Batteries</option>
                             <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subcategory">Type:</label>
+                        <select id="subcategory" name="subcategory">
+                            <option value="" disabled selected></option>
+                            <option value="Chargers">Chargers</option>
+                            <option value="Cables">Cables</option>
+                            <option value="Mounts">Mounts</option>
+                            <option value="Mouse">Mouse</option>
+                            <option value="Webcam">Webcam</option>
+                            <option value="Keyboard">Keyboard</option>
+                            <option value="AA">AA</option>
+                            <option value="AAA">AAA</option>
+                            <option value="Rechargeable">Rechargeable</option>
+                            <option value="Extension Cords">Extension Cords</option>
+                            <option value="Lamps">Lamps</option>
+                            <option value="Fitness">Fitness</option>
+                            <option value="Gaming">Gaming</option>
+                            <option value="Tools">Tools</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="supplier">Supplier:</label>
+                        <select id="supplier" name="supplier">
+                            <option value="" disabled selected></option>
+                            <option value="Logitech">Logitech</option>
+                            <option value="Alcatel">Alcatel</option>
+                            <option value="Sandisk">Sandisk</option>
+                            <option value="USAMS">USAMS</option>
+                            <option value="VTech">VTech</option>
+                            <option value="Awei">Awei</option>
+                            <option value="Promate">Promate</option>
                         </select>
                     </div>
                     <div class="form-buttons">

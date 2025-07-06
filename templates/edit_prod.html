@@ -35,6 +35,47 @@
                 <div class="inventory-content" id="inventoryUI">
                     <div class="search-container">
                         <input class="search-bar" type="text" id="searchInput" placeholder="Search">
+                        <div class="filters">
+                            <select id="categoryFilter">
+                                <option value="all">All Categories</option>
+                                <option value="Mobile Accessories">Mobile Accessories</option>
+                                <option value="Computer Accessories">Computer Accessories</option>
+                                <option value="Audio/Video">Audio/Video</option>
+                                <option value="Earphones/Headphones">Earphones/Headphones</option>
+                                <option value="Home/Office">Home/Office</option>
+                                <option value="Storage/Drives">Storage/Drives</option>
+                                <option value="Car Accessories">Car Accessories</option>
+                                <option value="Batteries">Batteries</option>
+                                <option value="Others">Others</option>
+                            </select>
+                            <select id="subcategoryFilter">
+                                <option value="all">All Type</option>
+                                <option value="Chargers">Chargers</option>
+                                <option value="Cables">Cables</option>
+                                <option value="Mounts">Mounts</option>
+                                <option value="Mouse">Mouse</option>
+                                <option value="Webcam">Webcam</option>
+                                <option value="Keyboard">Keyboard</option>
+                                <option value="AA">AA</option>
+                                <option value="AAA">AAA</option>
+                                <option value="Rechargeable">Rechargeable</option>
+                                <option value="Extension Cords">Extension Cords</option>
+                                <option value="Lamps">Lamps</option>
+                                <option value="Fitness">Fitness</option>
+                                <option value="Gaming">Gaming</option>
+                                <option value="Tools">Tools</option>
+                            </select>
+                            <select id="supplierFilter">
+                                <option value="all">All Suppliers</option>
+                                <option value="Logitech">Logitech</option>
+                                <option value="Alcatel">Alcatel</option>
+                                <option value="Sandisk">Sandisk</option>
+                                <option value="USAMS">USAMS</option>
+                                <option value="VTech">VTech</option>
+                                <option value="Awei">Awei</option>
+                                <option value="Promate">Promate</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="action-buttons">
                         <button class="edit-btn">Edit</button>
@@ -50,6 +91,8 @@
                                     <th>Name</th>
                                     <th>Price</th>
                                     <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Supplier</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -58,7 +101,9 @@
                                     <td>{{ product.prod_id }}</td>
                                     <td>{{ product.prod_name }}</td>
                                     <td>{{ product.price }}</td>
-                                    <td>{{ product.category }}</td>        
+                                    <td>{{ product.category }}</td>
+                                    <td>{{ product.subcategory }}</td>
+                                    <td>{{ product.supplier }}</td>        
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -101,6 +146,39 @@
                                     <option value="Car Accessories">Car Accessories</option>
                                     <option value="Batteries">Batteries</option>
                                     <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="productSubcategory">Type:</label>
+                                <select id="productSubcategory" name="ProductSubcategory">
+                                    <option value="" disabled selected></option>
+                                    <option value="Chargers">Chargers</option>
+                                    <option value="Cables">Cables</option>
+                                    <option value="Mounts">Mounts</option>
+                                    <option value="Mouse">Mouse</option>
+                                    <option value="Webcam">Webcam</option>
+                                    <option value="Keyboard">Keyboard</option>
+                                    <option value="AA">AA</option>
+                                    <option value="AAA">AAA</option>
+                                    <option value="Rechargeable">Rechargeable</option>
+                                    <option value="Extension Cords">Extension Cords</option>
+                                    <option value="Lamps">Lamps</option>
+                                    <option value="Fitness">Fitness</option>
+                                    <option value="Gaming">Gaming</option>
+                                    <option value="Tools">Tools</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="productSupplier">Supplier:</label>
+                                <select id="productSupplier" name="ProductSupplier">
+                                    <option value="" disabled selected></option>
+                                    <option value="Logitech">Logitech</option>
+                                    <option value="Alcatel">Alcatel</option>
+                                    <option value="Sandisk">Sandisk</option>
+                                    <option value="USAMS">USAMS</option>
+                                    <option value="VTech">VTech</option>
+                                    <option value="Awei">Awei</option>
+                                    <option value="Promate">Promate</option>
                                 </select>
                             </div>
                         </form>
@@ -155,6 +233,36 @@
                 });
             });
 
+            function applyInventoryFilters() {
+                let search = document.getElementById("searchInput").value.toLowerCase();
+                let category = document.getElementById("categoryFilter").value.toLowerCase();
+                let subcategory = document.getElementById("subcategoryFilter").value.toLowerCase();
+                let supplier = document.getElementById("supplierFilter").value.toLowerCase();
+
+                let rows = document.querySelectorAll("#productTable tbody tr");
+
+                rows.forEach(row => {
+                    let cells = row.getElementsByTagName("td");
+                    let prodId = cells[0].innerText.toLowerCase();
+                    let name = cells[1].innerText.toLowerCase();
+                    let cat = cells[3].innerText.toLowerCase();
+                    let subcat = cells[4].innerText.toLowerCase();
+                    let supp = cells[5].innerText.toLowerCase();
+
+                    let matchSearch = prodId.includes(search) || name.includes(search);
+                    let matchCat = (category === "all" || cat === category);
+                    let matchSubcat = (subcategory === "all" || subcat === subcategory);
+                    let matchSupp = (supplier === "all" || supp === supplier);
+
+                    row.style.display = matchSearch && matchCat && matchSubcat && matchSupp ? "" : "none";
+                });
+            }
+
+            document.getElementById("searchInput").addEventListener("keyup", applyInventoryFilters);
+            document.getElementById("categoryFilter").addEventListener("change", applyInventoryFilters);
+            document.getElementById("subcategoryFilter").addEventListener("change", applyInventoryFilters);
+            document.getElementById("supplierFilter").addEventListener("change", applyInventoryFilters);
+
             function selectRow(row) {
                 document.querySelectorAll('#productTable tbody tr').forEach(r => r.classList.remove('selected'));
                 row.classList.add('selected');
@@ -172,6 +280,8 @@
                 // document.getElementById('productStock').value = cells[2].textContent;
                 document.getElementById('productPrice').value = cells[2].textContent;
                 document.getElementById('productCategory').value = cells[3].textContent.trim().toLowerCase();
+                document.getElementById('productSubcategory').value = cells[4].textContent.trim().toLowerCase();
+                document.getElementById('productSupplier').value = cells[5].textContent.trim().toLowerCase();
                 document.getElementById('productModal').style.display = 'block';
             });
 

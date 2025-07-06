@@ -40,22 +40,44 @@ body {
     background-color: #f9f9f9;
     padding: 10px 0;
     z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
 }
 
 .search-bar{
+    flex: 1;
     padding: 8px;
-    width: 40%;
+    max-width: 40%;
+    padding: 8px 16px;
     font-size: 0.9rem;
-    border: 1px solid #000000;
+    border: 1px solid #000;
     border-radius: 50px;
-    margin-top: 30px;
-    margin-right: 900px;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+}
+
+.filters select {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    background-color: white;
+    width: 150px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
 }
 
 .table-wrapper {
-    width: 100%;
+    width: 1200px;
     overflow-y: scroll;
-    max-height: calc(100vh - 262px);
+    max-height: calc(100vh - 252px);
     margin-top: 10px;
     scrollbar-width: none;
     border: 1px solid black;
@@ -75,7 +97,7 @@ body {
 }
 
 table {
-    width: 100%;
+    width: 1200px;
     border-collapse: collapse;
     background-color: white;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
@@ -90,7 +112,7 @@ th, td {
 th {
     background-color: #069ff7;
     color: white;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 tr:nth-child(even) {

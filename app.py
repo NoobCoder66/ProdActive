@@ -33,6 +33,28 @@ def get_db_connection():
         port=int(os.getenv("MYSQLPORT"))
     )
 
+def generate_custom_prod_id():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT prod_id FROM prod WHERE prod_id LIKE '1110%' ORDER BY prod_id DESC LIMIT 1")
+    result = cursor.fetchone()
+
+    if result:
+        last_id_str = str(result[0])
+        if last_id_str.startswith("111") and last_id_str[4:].isdigit():
+            last_num = int(last_id_str[4:])
+        else:
+            last_num = -1
+    else:
+        last_num = -1
+
+    new_suffix = str(last_num + 1).zfill(4)
+    new_id = "111" + new_suffix
+    cursor.close()
+    conn.close()
+    return new_id
+
 
 # First page to show
 @app.route('/')
@@ -68,7 +90,6 @@ def login():
         session['username'] = user['username']
         session['role'] = user['role']
 
-        cursor.close()
         cursor.close()
 
         # Redirect based on role
@@ -251,31 +272,38 @@ def register_prod():
         
     try:
         # Get form data
-        prod_id = request.form['prod_id']
         prod_name = request.form['prod_name']
         stock = request.form['stock']
         price = request.form['price']
         category = request.form['category']
+        subcategory = request.form['subcategory']
+        supplier = request.form['supplier']
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
         # Check if prod_id or prod_name already exists
-        cursor.execute("SELECT * FROM prod WHERE prod_id = %s OR prod_name = %s", (prod_id, prod_name))
+        cursor.execute("SELECT * FROM prod WHERE prod_name = %s", (prod_name,))
         existing = cursor.fetchone()
 
         if existing:
-            flash("Product ID or Name already exists!", "error")
+            flash("Product Name already exists!", "error")
             cursor.close()
             conn.close()
             return redirect(url_for('register_prod'))
+        
+        while True:
+            prod_id = generate_custom_prod_id()
+            cursor.execute("SELECT prod_id FROM prod WHERE prod_id = %s", (prod_id,))
+            if not cursor.fetchone():
+                break
 
         # Insert the data into the user table
         query = """
-            INSERT INTO prod (prod_id, prod_name, stock, price, category)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO prod (prod_id, prod_name, stock, price, category, subcategory, supplier)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        values = (prod_id, prod_name, stock, price, category)
+        values = (prod_id, prod_name, stock, price, category, subcategory, supplier)
 
         cursor.execute(query, values)
         conn.commit()
@@ -531,7 +559,7 @@ def order_page():
         if 'order_list' not in session:
             session['order_list'] = []
 
-        cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
+        cursor.execute("SELECT prod_id, prod_name, stock, price, category, subcategory, supplier FROM prod")
         products = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -795,7 +823,7 @@ def order_emp():
         if 'order_list' not in session:
             session['order_list'] = []
 
-        cursor.execute("SELECT prod_id, prod_name, stock, price, category FROM prod")
+        cursor.execute("SELECT prod_id, prod_name, stock, price, category, subcategory, supplier FROM prod")
         products = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -1203,15 +1231,17 @@ def update_product():
     prod_name = request.form.get('ProductName', '').strip() or current_data['prod_name']
     price = request.form.get('ProductPrice', '').strip() or current_data['price']
     category = request.form.get('ProductCategory', '').strip() or current_data['category']
+    subcategory = request.form.get('ProductSubcategory', '').strip() or current_data['subcategory']
+    supplier = request.form.get('ProductSupplier', '').strip() or current_data['supplier']
 
     try:
         cursor = conn.cursor()
         query = """
             UPDATE prod
-            SET prod_name = %s, price = %s, category = %s
+            SET prod_name = %s, price = %s, category = %s, subcategory = %s, supplier = %s
             WHERE prod_id = %s
         """
-        values = (prod_name, price, category, prod_id)
+        values = (prod_name, price, category, subcategory, supplier, prod_id)
         cursor.execute(query, values)
         conn.commit()
         cursor.close()

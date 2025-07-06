@@ -51,16 +51,16 @@
 
                         <div class="form-box contact">
                             <h3><img src="{{ url_for('static', filename='imtry/contacts.png') }}" style="height: 20px;"> Contacts</h3>
-                            <label>Tel no.: <input type="tel" name="tel_no" autocomplete="off" maxlength="8" placeholder="optional"></label>
+                            <label>Tel no.: <input type="tel" name="tel_no" autocomplete="off" maxlength="8"></label>
                             <label>Mobile: <input type="tel" name="contacts" autocomplete="off" maxlength="11" inputmode="numeric" pattern="[0-9]*"></label>
                             <label>Email: <input type="email" name="email" autocomplete="off" maxlength="30"></label>
                         </div>
 
                         <div class="form-box address">
                             <h3><img src="{{ url_for('static', filename='imtry/address.png') }}" style="height: 20px;"> Address</h3>
-                            <label>Street: <input type="text" name="street" autocomplete="off" maxlength="50" placeholder="optional"></label>
-                            <label>City: <input type="text" name="city" autocomplete="off" maxlength="50" placeholder="optional"></label>
-                            <label>Zip: <input type="text" name="zip" autocomplete="off" maxlength="4" inputmode="numeric" placeholder="optional"></label>
+                            <label>Street: <input type="text" name="street" autocomplete="off" maxlength="50"></label>
+                            <label>City: <input type="text" name="city" autocomplete="off" maxlength="50"></label>
+                            <label>Zip: <input type="text" name="zip" autocomplete="off" maxlength="4" inputmode="numeric"></label>
                         </div>
 
                     </div>
@@ -102,7 +102,7 @@
                             addError(input, 'Please enter a valid email ending in .com.');
                         }
                     }
-                    
+
                     const optionalFields = ['tel_no', 'street', 'city', 'zip'];
                     if (optionalFields.includes(name) && !value) {
                         addError(input, 'Please fill out this field.');
@@ -133,7 +133,7 @@
             document.querySelector('[name="tel_no"]').addEventListener('input', function () {
                 this.value = this.value.replace(/[^0-9\-]/g, '');
             });
-            
+
             function calculateAge() {
                 const birthdate = document.getElementById("birthdate").value;
                 const calculateAge = document.getElementById("calculateAge");

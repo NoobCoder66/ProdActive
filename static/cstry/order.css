@@ -65,17 +65,15 @@ form {
     font-weight: 600;
     width: auto;
 }
+
 .select {
-    /* flex: 1; */
+    flex: 1;
     padding: 10px 20px;
     font-size: 1rem;
     border-radius: 20px;
     border: 2px solid #ccc;
     outline: none;
     width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
 }
 
 .form-buttons-bottom {
@@ -122,9 +120,9 @@ input{
     background-color: #007acc;
 }
 .table-wrapper {
-    width: 100%;
+    width: 1230px;
     overflow-y: scroll;
-    max-height: calc(100vh - 309px);
+    max-height: calc(100vh - 313px);
     margin-top: 20px;
     scrollbar-width: none;
     border: 1px solid black;
@@ -138,7 +136,7 @@ input{
     border: 2px solid black;
 }
 table {
-    width: 100%;
+    width: 1230px;
     border-collapse: collapse;
     background-color: white;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
@@ -152,7 +150,7 @@ th, td {
 th {
     background-color: #069ff7;
     color: white;
-    font-size: 1.2rem;
+    font-size: 0.98rem;
 }
 
 tr:nth-child(even) {

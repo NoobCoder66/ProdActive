@@ -32,6 +32,47 @@
                 <div class="inventory-content" id="inventoryUI">
                     <div class="search-container">
                         <input class="search-bar" type="text" id="searchInput" placeholder="Search">
+                        <div class="filters">
+                            <select id="categoryFilter">
+                                <option value="all">All Categories</option>
+                                <option value="Mobile Accessories">Mobile Accessories</option>
+                                <option value="Computer Accessories">Computer Accessories</option>
+                                <option value="Audio/Video">Audio/Video</option>
+                                <option value="Earphones/Headphones">Earphones/Headphones</option>
+                                <option value="Home/Office">Home/Office</option>
+                                <option value="Storage/Drives">Storage/Drives</option>
+                                <option value="Car Accessories">Car Accessories</option>
+                                <option value="Batteries">Batteries</option>
+                                <option value="Others">Others</option>
+                            </select>
+                            <select id="subcategoryFilter">
+                                <option value="all">All Type</option>
+                                <option value="Chargers">Chargers</option>
+                                <option value="Cables">Cables</option>
+                                <option value="Mounts">Mounts</option>
+                                <option value="Mouse">Mouse</option>
+                                <option value="Webcam">Webcam</option>
+                                <option value="Keyboard">Keyboard</option>
+                                <option value="AA">AA</option>
+                                <option value="AAA">AAA</option>
+                                <option value="Rechargeable">Rechargeable</option>
+                                <option value="Extension Cords">Extension Cords</option>
+                                <option value="Lamps">Lamps</option>
+                                <option value="Fitness">Fitness</option>
+                                <option value="Gaming">Gaming</option>
+                                <option value="Tools">Tools</option>
+                            </select>
+                            <select id="supplierFilter">
+                                <option value="all">All Suppliers</option>
+                                <option value="Logitech">Logitech</option>
+                                <option value="Alcatel">Alcatel</option>
+                                <option value="Sandisk">Sandisk</option>
+                                <option value="USAMS">USAMS</option>
+                                <option value="VTech">VTech</option>
+                                <option value="Awei">Awei</option>
+                                <option value="Promate">Promate</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="table-wrapper">
                         <table border="1" id="productTable">
@@ -42,6 +83,8 @@
                                     <th>Stock</th>
                                     <th>Price</th>
                                     <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Supplier</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -53,6 +96,8 @@
                                     <td >{{ product.stock }}</td>
                                     <td>₱{{ "{:,.2f}".format(product.price) }}</td>
                                     <td>{{ product.category }}</td>
+                                    <td>{{ product.subcategory }}</td>
+                                    <td>{{ product.supplier }}</td>
                                     <td class="{% if product.status == 'Low Stock' %}critical-stock{% elif product.status == 'Over Stock' %}over-stock{% endif %}">
                                         {{ product.status }}
                                     </td>        
@@ -74,6 +119,36 @@
                     row.style.display = text.includes(filter) ? "" : "none";
                 });
             });
+
+            function applyInventoryFilters() {
+                let search = document.getElementById("searchInput").value.toLowerCase();
+                let category = document.getElementById("categoryFilter").value.toLowerCase();
+                let subcategory = document.getElementById("subcategoryFilter").value.toLowerCase();
+                let supplier = document.getElementById("supplierFilter").value.toLowerCase();
+
+                let rows = document.querySelectorAll("#productTable tbody tr");
+
+                rows.forEach(row => {
+                    let cells = row.getElementsByTagName("td");
+                    let prodId = cells[0].innerText.toLowerCase();
+                    let name = cells[1].innerText.toLowerCase();
+                    let cat = cells[4].innerText.toLowerCase();
+                    let subcat = cells[5].innerText.toLowerCase();
+                    let supp = cells[6].innerText.toLowerCase();
+
+                    let matchSearch = prodId.includes(search) || name.includes(search);
+                    let matchCat = (category === "all" || cat === category);
+                    let matchSubcat = (subcategory === "all" || subcat === subcategory);
+                    let matchSupp = (supplier === "all" || supp === supplier);
+
+                    row.style.display = matchSearch && matchCat && matchSubcat && matchSupp ? "" : "none";
+                });
+            }
+
+            document.getElementById("searchInput").addEventListener("keyup", applyInventoryFilters);
+            document.getElementById("categoryFilter").addEventListener("change", applyInventoryFilters);
+            document.getElementById("subcategoryFilter").addEventListener("change", applyInventoryFilters);
+            document.getElementById("supplierFilter").addEventListener("change", applyInventoryFilters);
             
             function confirmLogout() {
                 if (confirm("Are you sure you want to log out?")) {
